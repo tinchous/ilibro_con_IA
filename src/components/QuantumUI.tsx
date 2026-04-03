@@ -3,8 +3,12 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Terminal, Database, Cpu, AlertTriangle, FileText, Mail, BookOpen, User, Activity, Zap, History, ChevronRight, HelpCircle, Sun, Moon } from 'lucide-react';
 import { BOOK_DATA, Chapter, Branch, Artifact, Choice } from '../data/book';
 import ReactMarkdown from 'react-markdown';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { auth, db, signInWithGoogle, collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot, doc, setDoc, getDoc } from '../firebase';
+import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -360,6 +364,52 @@ export const QuantumUI = () => {
   const [isMapOpen, setIsMapOpen] = useState(false);
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [selectedRecipient, setSelectedRecipient] = useState<'Elon' | 'Jesus' | 'Einstein' | 'Tesla' | 'FutureScientist'>('Elon');
+  const [mails, setMails] = useState<any[]>([]);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
+
+  // Sync Auth State
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u);
+      if (u) {
+        // Sync user profile to Firestore
+        const userRef = doc(db, 'users', u.uid);
+        setDoc(userRef, {
+          uid: u.uid,
+          email: u.email,
+          displayName: u.displayName,
+          photoURL: u.photoURL,
+          characterType,
+          psiValue,
+          currentChapterKey,
+          solvedEnigmasCount,
+          lastUpdated: serverTimestamp()
+        }, { merge: true });
+      }
+    });
+    return () => unsubscribe();
+  }, [characterType, psiValue, currentChapterKey, solvedEnigmasCount]);
+
+  // Sync Mails from Firestore
+  useEffect(() => {
+    if (!user) {
+      setMails([]);
+      return;
+    }
+    const q = query(
+      collection(db, 'mails'),
+      where('senderUid', '==', user.uid),
+      orderBy('sentAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const m = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMails(m);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
   // Dynamic Content Logic
   const getDynamicChapter = (baseChapter: Chapter): Chapter => {
@@ -484,50 +534,92 @@ export const QuantumUI = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!mailContent.trim()) return;
+    if (!user || !mailContent.trim()) {
+      if (!user) {
+        setTransmission({ sender: 'SISTEMA', message: 'Debes iniciar sesión para enviar mails cuánticos.' });
+      }
+      return;
+    }
+    
+    const currentContent = mailContent;
+    setMailContent(''); // Clear immediately to prevent double send
     setIsSendingMail(true);
     
-    const recipients = ['Albert Einstein', 'Nikola Tesla', 'Dra. Elena Vance', 'Dr. Aris Thorne', 'Jesús', 'Elon Musk'];
-    const randomRecipient = recipients[Math.floor(Math.random() * recipients.length)];
+    const subject = `Consulta del Observador - Nodo ${currentChapterKey}`;
+    const body = currentContent;
+    const recipient = selectedRecipient;
+    const senderBranch = chapter.branch;
     
-    const newMail = { to: randomRecipient, content: mailContent };
-    
-    // Simulate quantum delay
-    setTimeout(() => {
-      const replies: Record<string, string[]> = {
-        'Albert Einstein': [
-          "La imaginación es más importante que el conocimiento. Tu mensaje ha llegado a través de un puente de Rosen-Einstein.",
-          "Interesante perspectiva. ¿Has considerado que el tiempo es solo una ilusión persistente?"
-        ],
-        'Nikola Tesla': [
-          "Tus palabras vibran en la frecuencia correcta. Sigue buscando el 3, el 6 y el 9.",
-          "He recibido tu señal. La energía libre está cerca, solo falta que el Observador la acepte."
-        ],
-        'Dra. Elena Vance': [
-          "Silas, no deberías estar enviando mensajes fuera del protocolo. Pero te escucho.",
-          "La Fundación está monitoreando esta conexión. Ten cuidado con lo que preguntas."
-        ],
-        'Dr. Aris Thorne': [
-          "El código se está volviendo inestable. Tu interacción está acelerando la decoherencia.",
-          "He visto tu mensaje en el log del sistema. Sigue adelante, el Lector te observa."
-        ],
-        'Jesús': [
-          "En el principio era el Verbo, y ahora el Verbo es dato. Tu fe en la realidad es conmovedora.",
-          "No temas, Silas. El pan de la información es infinito para aquellos que saben observar."
-        ],
-        'Elon Musk': [
-          "Estamos trabajando en el Neuralink para Laniakea. Tu latencia es un poco alta, ¿estás en Marte?",
-          "Interesante. ¿Has pensado en tokenizar tu existencia cuántica? Doge-Psi es el futuro."
-        ]
-      };
-      
-      const possibleReplies = replies[randomRecipient] || ["Transmisión recibida. El vacío no responde hoy."];
-      const reply = possibleReplies[Math.floor(Math.random() * possibleReplies.length)];
-      
-      setSentMails(prev => [...prev, { ...newMail, reply }]);
+    try {
+      // 1. Save initial mail to Firestore
+      const mailRef = await addDoc(collection(db, 'mails'), {
+        senderUid: user.uid,
+        recipient,
+        subject,
+        body,
+        status: 'SENT',
+        sentAt: serverTimestamp(),
+        senderBranch,
+        recipientBranch: recipient === 'Elon' || recipient === 'FutureScientist' ? 'REAL' : 'IMAGINARY'
+      });
+
+      // 2. Call Backend for Grok Reply
+      const response = await fetch('/api/quantum-mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, body, recipient })
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'delivered') {
+        // Update Firestore with reply
+        await setDoc(mailRef, {
+          reply: data.body,
+          status: 'DELIVERED',
+          deliveredAt: serverTimestamp()
+        }, { merge: true });
+        
+        setTransmission({ sender: recipient, message: "Has recibido una respuesta cuántica." });
+      } else if (data.status === 'collapsed') {
+        await setDoc(mailRef, { status: 'COLLAPSED' }, { merge: true });
+        setTransmission({ sender: 'SISTEMA', message: data.message });
+      } else if (data.status === 'out_of_phase') {
+        await setDoc(mailRef, { status: 'OUT_OF_PHASE' }, { merge: true });
+        setTransmission({ sender: 'SISTEMA', message: data.message });
+      }
+    } catch (error) {
+      console.error("Mail Error:", error);
+      setMailContent(currentContent); // Restore if failed
+      setTransmission({ sender: 'ERROR', message: "Fallo en la comunicación interdimensional." });
+    } finally {
       setIsSendingMail(false);
-      setMailContent('');
-    }, 2000);
+    }
+  };
+
+  const generateQuantumImage = async (prompt: string) => {
+    if (!prompt.trim()) return;
+    setIsGeneratingImage(true);
+    setTransmission({ sender: 'SISTEMA', message: 'Iniciando renderizado de imagen cuántica...' });
+    try {
+      const response = await fetch('/api/quantum-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+      const data = await response.json();
+      if (data.imageUrl) {
+        setLastGeneratedImage(data.imageUrl);
+        setTransmission({ sender: 'SISTEMA', message: 'Imagen colapsada con éxito.' });
+      } else {
+        setTransmission({ sender: 'SISTEMA', message: 'Error en el colapso de imagen.' });
+      }
+    } catch (error) {
+      console.error("Image Error:", error);
+      setTransmission({ sender: 'ERROR', message: 'Fallo en la red neuronal de Laniakea.' });
+    } finally {
+      setIsGeneratingImage(false);
+    }
   };
 
   return (
@@ -624,6 +716,20 @@ export const QuantumUI = () => {
               <Terminal size={14} />
               <span>STATE: {characterType}</span>
             </div>
+            {user ? (
+              <div className="flex items-center gap-2">
+                <img src={user.photoURL || ''} alt="User" className="w-5 h-5 rounded-full border border-cyan-500/50" referrerPolicy="no-referrer" />
+                <span className="text-[10px] uppercase tracking-widest hidden md:inline">{user.displayName}</span>
+              </div>
+            ) : (
+              <button 
+                onClick={signInWithGoogle}
+                className="flex items-center gap-2 text-zinc-500 hover:text-cyan-400 transition-colors"
+              >
+                <User size={14} />
+                <span className="text-[10px] uppercase tracking-widest">LOGIN</span>
+              </button>
+            )}
             <div className={cn(
               "flex items-center gap-2 animate-pulse",
               chapter.branch === 'IMAGINARY' ? "text-purple-500" : "text-red-500"
@@ -701,7 +807,12 @@ export const QuantumUI = () => {
                 "text-lg leading-relaxed space-y-6 transition-colors",
                 isDarkMode ? "text-zinc-400" : "text-zinc-600"
               )}>
-                <ReactMarkdown>{transformText(chapter.content, isBlackHoleActive)}</ReactMarkdown>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkMath]} 
+                  rehypePlugins={[rehypeKatex]}
+                >
+                  {transformText(chapter.content, isBlackHoleActive)}
+                </ReactMarkdown>
               </div>
             </div>
 
@@ -1169,7 +1280,21 @@ export const QuantumUI = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-sm">
-                {sentMails.length === 0 && (
+                {!user && (
+                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-12">
+                    <AlertTriangle className="text-yellow-500" size={48} />
+                    <div className="text-xl font-bold">CONEXIÓN_NO_AUTORIZADA</div>
+                    <p className="text-zinc-500 max-w-xs">Debes autenticar tu firma cuántica para acceder al servidor de correo de Laniakea.</p>
+                    <button 
+                      onClick={signInWithGoogle}
+                      className="px-8 py-3 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 transition-all"
+                    >
+                      AUTENTICAR CON GOOGLE
+                    </button>
+                  </div>
+                )}
+
+                {user && mails.length === 0 && (
                   <div className={cn(
                     "text-center italic py-12",
                     isDarkMode ? "text-zinc-600" : "text-zinc-400"
@@ -1177,66 +1302,149 @@ export const QuantumUI = () => {
                     No hay transmisiones previas en este hilo temporal.
                   </div>
                 )}
-                {sentMails.map((mail, i) => (
-                  <div key={i} className="space-y-4">
+
+                {user && mails.map((mail, i) => (
+                  <motion.div 
+                    key={mail.id || i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-4"
+                  >
                     <div className="flex justify-end">
                       <div className={cn(
                         "border p-4 rounded-lg rounded-tr-none max-w-[80%] shadow-sm",
                         isDarkMode ? "bg-cyan-500/10 border-cyan-500/30" : "bg-cyan-50 border-cyan-200"
                       )}>
-                        <div className="text-[10px] text-cyan-500 mb-1 font-bold">PARA: {mail.to}</div>
-                        <div className={isDarkMode ? "text-zinc-200" : "text-zinc-800"}>{mail.content}</div>
+                        <div className="text-[10px] text-cyan-500 mb-1 font-bold uppercase tracking-widest flex justify-between">
+                          <span>PARA: {mail.recipient}</span>
+                          <span className={cn(
+                            "text-[8px]",
+                            mail.status === 'DELIVERED' ? "text-green-500" : 
+                            mail.status === 'SENT' ? "text-yellow-500 animate-pulse" : "text-red-500"
+                          )}>
+                            [{mail.status || 'SENT'}]
+                            {mail.senderBranch !== mail.recipientBranch && " [FUERA_DE_FASE]"}
+                          </span>
+                        </div>
+                        <div className={isDarkMode ? "text-zinc-200" : "text-zinc-800"}>
+                          {mail.body}
+                          {mail.senderBranch !== mail.recipientBranch && (
+                            <div className="text-[8px] text-yellow-500 mt-1 italic font-bold">
+                              [ADVERTENCIA]: INTERFERENCIA_DE_PLANO_CUÁNTICO
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
+                    
                     {mail.reply && (
                       <div className="flex justify-start">
                         <div className={cn(
                           "border p-4 rounded-lg rounded-tl-none max-w-[80%] shadow-sm",
                           isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-zinc-50 border-zinc-200"
                         )}>
-                          <div className="text-[10px] text-zinc-500 mb-1 font-bold">DE: {mail.to}</div>
-                          <div className={cn("italic", isDarkMode ? "text-zinc-300" : "text-zinc-600")}>"{mail.reply}"</div>
+                          <div className="text-[10px] text-zinc-500 mb-1 font-bold uppercase tracking-widest">DE: {mail.recipient}</div>
+                          <div className={cn("italic", isDarkMode ? "text-zinc-300" : "text-zinc-600")}>
+                            <ReactMarkdown 
+                              remarkPlugins={[remarkMath]} 
+                              rehypePlugins={[rehypeKatex]}
+                            >
+                              {mail.reply}
+                            </ReactMarkdown>
+                          </div>
                         </div>
                       </div>
                     )}
-                  </div>
+
+                    {mail.status === 'COLLAPSED' && (
+                      <div className="text-[10px] text-red-500 font-mono animate-pulse text-center uppercase">
+                        [ERROR]: COLAPSO_DE_FUNCIÓN_DE_ONDA - MENSAJE_PERDIDO
+                      </div>
+                    )}
+
+                    {mail.status === 'OUT_OF_PHASE' && (
+                      <div className="text-[10px] text-yellow-500 font-mono animate-pulse text-center uppercase">
+                        [ERROR]: INTERFERENCIA_DE_FASE - ENTREGA_FALLIDA
+                      </div>
+                    )}
+                  </motion.div>
                 ))}
               </div>
 
-              <div className={cn(
-                "p-6 border-t",
-                isDarkMode ? "border-zinc-800 bg-black/30" : "border-zinc-200 bg-zinc-50/50"
-              )}>
-                <div className="flex gap-4">
-                  <textarea
-                    value={mailContent}
-                    onChange={(e) => setMailContent(e.target.value)}
-                    placeholder="Escribe tu mensaje al vacío..."
-                    className={cn(
-                      "flex-1 border p-4 font-mono text-sm outline-none resize-none h-24 rounded-lg transition-all",
-                      isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
-                    )}
-                  />
-                  <button
-                    onClick={handleSendMessage}
-                    disabled={isSendingMail || !mailContent.trim()}
-                    className={cn(
-                      "px-8 text-black font-black uppercase tracking-widest text-xs rounded-lg transition-all active:scale-95",
-                      (isSendingMail || !mailContent.trim()) 
-                        ? "bg-zinc-500 opacity-50 cursor-not-allowed" 
-                        : "bg-cyan-500 hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]"
-                    )}
-                  >
-                    {isSendingMail ? 'ENVIANDO...' : 'ENVIAR'}
-                  </button>
-                </div>
+              {user && (
                 <div className={cn(
-                  "mt-4 text-[10px] text-center uppercase tracking-tighter",
-                  isDarkMode ? "text-zinc-600" : "text-zinc-400"
+                  "p-6 border-t",
+                  isDarkMode ? "border-zinc-800 bg-black/30" : "border-zinc-200 bg-zinc-50/50"
                 )}>
-                  Advertencia: Las respuestas pueden tardar eones debido a la latencia cuántica.
+                  <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {(['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist'] as const).map(rec => (
+                      <button
+                        key={rec}
+                        onClick={() => setSelectedRecipient(rec)}
+                        className={cn(
+                          "px-3 py-1 rounded-full text-[10px] font-bold transition-all whitespace-nowrap",
+                          selectedRecipient === rec 
+                            ? "bg-cyan-500 text-black shadow-[0_0_10px_rgba(6,182,212,0.5)]" 
+                            : "bg-zinc-800 text-zinc-500 hover:text-zinc-300"
+                        )}
+                      >
+                        {rec.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-4">
+                    <textarea
+                      value={mailContent}
+                      onChange={(e) => setMailContent(e.target.value)}
+                      placeholder={`Escribe a ${selectedRecipient}...`}
+                      className={cn(
+                        "flex-1 border p-4 font-mono text-sm outline-none resize-none h-24 rounded-lg transition-all",
+                        isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
+                      )}
+                    />
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={handleSendMessage}
+                        disabled={isSendingMail || !mailContent.trim()}
+                        className={cn(
+                          "px-8 h-full text-black font-black uppercase tracking-widest text-xs rounded-lg transition-all active:scale-95 flex items-center justify-center",
+                          (isSendingMail || !mailContent.trim()) 
+                            ? "bg-zinc-500 opacity-50 cursor-not-allowed" 
+                            : "bg-cyan-500 hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]"
+                        )}
+                      >
+                        {isSendingMail ? <Activity size={16} className="animate-spin" /> : 'ENVIAR'}
+                      </button>
+                      <button 
+                        onClick={() => generateQuantumImage(mailContent)}
+                        disabled={isGeneratingImage || !mailContent.trim()}
+                        className={cn(
+                          "p-2 rounded-md transition-all",
+                          isDarkMode ? "bg-zinc-800 text-zinc-400 hover:text-cyan-400" : "bg-zinc-100 text-zinc-600 hover:text-cyan-600"
+                        )}
+                        title="Generar Imagen Cuántica"
+                      >
+                        <Zap size={16} className={isGeneratingImage ? "animate-spin" : ""} />
+                      </button>
+                    </div>
+                  </div>
+                  {lastGeneratedImage && (
+                    <motion.div 
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="mt-4 relative group"
+                    >
+                      <img src={lastGeneratedImage} alt="Quantum" className="w-full h-48 object-cover rounded-lg border border-zinc-800" referrerPolicy="no-referrer" />
+                      <button 
+                        onClick={() => setLastGeneratedImage(null)}
+                        className="absolute top-2 right-2 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <ChevronRight className="rotate-90" size={14} />
+                      </button>
+                    </motion.div>
+                  )}
                 </div>
-              </div>
+              )}
             </motion.div>
           </motion.div>
         )}

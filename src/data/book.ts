@@ -104,7 +104,7 @@ De repente, una figura emerge de la oscuridad. No camina, simplemente *está* al
 Pegada al marco de la puerta, una **nota de la Fundación Laniakea** advierte:
 > *"Protocolo de Masa Crítica: La densidad física de Silas está ligada a su certeza. Si duda, su masa aumentará exponencialmente hasta colapsar el suelo de la cámara. No te detengas. La inercia es tu única protección contra la gravedad de la duda."*
 
-La puerta se abre para revelar un **pasillo infinito**, iluminado por luces de neón que parpadean con una frecuencia matemática. Las paredes están cubiertas de arriba abajo con una fórmula escrita en pintura fluorescente: **$Realidad = \int (Duda) dt$**. Silas siente que el pasillo no es un lugar, sino una progresión, y que cada paso que da es una operación aritmética en el gran cálculo de su vida.`,
+La puerta se abre para revelar un **pasillo infinito**, iluminado por luces de neón que parpadean con una frecuencia matemática. Las paredes están cubiertas de arriba abajo con una fórmula escrita en pintura fluorescente: **$Realidad = \int Duda \, dt$**. Silas siente que el pasillo no es un lugar, sino una progresión, y que cada paso que da es una operación aritmética en el gran cálculo de su vida.`,
     choices: [
       { text: 'CORRER HACIA EL FINAL DEL PASILLO', nextChapter: 2 },
       { text: 'TOCAR LA PARED DE LA IZQUIERDA', nextChapter: 1, nextBranch: 'IMAGINARY', triggerWormhole: true },
@@ -268,7 +268,7 @@ Al probar el "pan", los muros de la realidad se vuelven transparentes. Puedes ve
 
 En medio del jardín, hay un **Terminal de Computadora** de mármol. En la pantalla, hay un **Diario Personal (Entrada #88 - Dr. Aris Thorne)**:
 
-> *"He descubierto que la Proporción Áurea (φ) es en realidad una velocidad de consumo. El libro 'consume' la atención del lector para alimentar la realidad de Silas. Cuanto más se concentra el lector, más nítido es el mundo de Silas, pero más cerca estamos del Colapso de Función."*`,
+> *"He descubierto que la Proporción Áurea ($\phi$) es en realidad una velocidad de consumo. El libro 'consume' la atención del lector para alimentar la realidad de Silas. Cuanto más se concentra el lector, más nítido es el mundo de Silas, pero más cerca estamos del Colapso de Función."*`,
     choices: [
       { text: 'ROMPER EL ESPEJO', nextChapter: 8 },
       { text: 'LEER EL LIBRO', nextChapter: 5, nextBranch: 'IMAGINARY', triggerWormhole: true }

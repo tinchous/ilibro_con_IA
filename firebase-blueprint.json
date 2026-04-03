@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "Stores user information and their current state in the simulation.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "characterType": { "type": "string", "enum": ["HUMAN", "VARIABLE", "DATA"] },
+        "psiValue": { "type": "number" },
+        "currentChapterKey": { "type": "string" },
+        "solvedEnigmasCount": { "type": "integer" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Mail": {
+      "title": "Quantum Mail",
+      "description": "A message sent between the observer and a character in the simulation.",
+      "type": "object",
+      "properties": {
+        "senderUid": { "type": "string" },
+        "recipient": { "type": "string", "enum": ["Elon", "Jesus", "Einstein", "Tesla", "FutureScientist"] },
+        "subject": { "type": "string" },
+        "body": { "type": "string" },
+        "reply": { "type": "string" },
+        "status": { "type": "string", "enum": ["SENT", "DELIVERED", "COLLAPSED"] },
+        "sentAt": { "type": "string", "format": "date-time" },
+        "deliveredAt": { "type": "string", "format": "date-time" },
+        "senderBranch": { "type": "string", "enum": ["REAL", "IMAGINARY"] },
+        "recipientBranch": { "type": "string", "enum": ["REAL", "IMAGINARY"] },
+        "imageUrl": { "type": "string", "format": "uri" }
+      },
+      "required": ["senderUid", "recipient", "subject", "body", "status", "sentAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile document."
+    },
+    "/mails/{mailId}": {
+      "schema": "Mail",
+      "description": "Quantum mail messages."
+    }
+  }
+}
