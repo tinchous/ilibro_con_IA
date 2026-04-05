@@ -7,11 +7,14 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { QuantumParticles } from './QuantumParticles';
 import { auth, db, signInWithGoogle, collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot, doc, setDoc, getDoc } from '../firebase';
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { GoogleGenAI } from "@google/genai";
 
-const PhysicsLab = ({ activeSimulation, setActiveSimulation, isDarkMode, onClose }: { activeSimulation: string; setActiveSimulation: (sim: 'ENTANGLEMENT' | 'WAVE_PARTICLE' | 'FIBONACCI') => void; isDarkMode: boolean; onClose: () => void }) => {
+import { generateQuantumDevice } from '../services/imageService';
+
+const PhysicsLab = ({ activeSimulation, setActiveSimulation, isDarkMode, onClose, deviceImage }: { activeSimulation: string; setActiveSimulation: (sim: 'ENTANGLEMENT' | 'WAVE_PARTICLE' | 'FIBONACCI') => void; isDarkMode: boolean; onClose: () => void; deviceImage: string | null }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
@@ -42,33 +45,46 @@ const PhysicsLab = ({ activeSimulation, setActiveSimulation, isDarkMode, onClose
 
         <div className="flex-1 p-12 flex items-center justify-center relative overflow-hidden">
           {activeSimulation === 'ENTANGLEMENT' && (
-            <div className="relative w-full h-full flex items-center justify-around">
-              {[0, 1].map((i) => (
+            <div className="relative w-full h-full flex flex-col items-center justify-center gap-8">
+              {deviceImage ? (
                 <motion.div
-                  key={i}
-                  animate={{ 
-                    rotate: 360,
-                    scale: [1, 1.2, 1],
-                    boxShadow: ["0 0 20px rgba(6,182,212,0.2)", "0 0 40px rgba(6,182,212,0.4)", "0 0 20px rgba(6,182,212,0.2)"]
-                  }}
-                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                  className="w-32 h-32 rounded-full border-2 border-cyan-500/50 flex items-center justify-center relative"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="relative w-full max-w-2xl aspect-video rounded-xl overflow-hidden border border-cyan-500/30 shadow-[0_0_30px_rgba(6,182,212,0.2)]"
                 >
-                  <div className="w-4 h-4 bg-cyan-500 rounded-full" />
-                  <motion.div 
-                    animate={{ rotate: -360 }}
-                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0 flex items-start justify-center"
-                  >
-                    <div className="w-2 h-2 bg-white rounded-full mt-2" />
-                  </motion.div>
+                  <img src={deviceImage} alt="Quantum Entanglement Device" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none" />
                 </motion.div>
-              ))}
-              <motion.div 
-                animate={{ opacity: [0.2, 0.5, 0.2] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-                className="absolute w-1/2 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent"
-              />
+              ) : (
+                <div className="relative w-full h-full flex items-center justify-around">
+                  {[0, 1].map((i) => (
+                    <motion.div
+                      key={i}
+                      animate={{ 
+                        rotate: 360,
+                        scale: [1, 1.2, 1],
+                        boxShadow: ["0 0 20px rgba(6,182,212,0.2)", "0 0 40px rgba(6,182,212,0.4)", "0 0 20px rgba(6,182,212,0.2)"]
+                      }}
+                      transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                      className="w-32 h-32 rounded-full border-2 border-cyan-500/50 flex items-center justify-center relative"
+                    >
+                      <div className="w-4 h-4 bg-cyan-500 rounded-full" />
+                      <motion.div 
+                        animate={{ rotate: -360 }}
+                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                        className="absolute inset-0 flex items-start justify-center"
+                      >
+                        <div className="w-2 h-2 bg-white rounded-full mt-2" />
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                  <motion.div 
+                    animate={{ opacity: [0.2, 0.5, 0.2] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="absolute w-1/2 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent"
+                  />
+                </div>
+              )}
               <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
                 Entrelazamiento: El estado de una partícula afecta instantáneamente a la otra.
               </div>
@@ -165,33 +181,6 @@ const PhysicsLab = ({ activeSimulation, setActiveSimulation, isDarkMode, onClose
   );
 };
 
-const QuantumParticles = ({ userVariable }: { userVariable: number }) => {
-  return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-      {[...Array(20)].map((_, i) => (
-        <motion.div
-          key={i}
-          className="absolute w-1 h-1 bg-cyan-500/20 rounded-full"
-          initial={{ 
-            x: Math.random() * 100 + "%", 
-            y: Math.random() * 100 + "%",
-            opacity: 0 
-          }}
-          animate={{ 
-            y: [null, Math.random() * 100 + "%"],
-            opacity: [0, 0.5, 0],
-            scale: [0, 1.5, 0]
-          }}
-          transition={{ 
-            duration: (Math.random() * 10 + 10) / userVariable, 
-            repeat: Infinity,
-            ease: "linear"
-          }}
-        />
-      ))}
-    </div>
-  );
-};
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -769,10 +758,20 @@ export const QuantumUI = () => {
   const [showGalacticEvent, setShowGalacticEvent] = useState(false);
   const [isWrongAnswer, setIsWrongAnswer] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [hasWormholeAccess, setHasWormholeAccess] = useState(false);
   const [coreStability, setCoreStability] = useState(98.4);
   const [currentHint, setCurrentHint] = useState<{ sender: string; message: string } | null>(null);
   const [transmission, setTransmission] = useState<{ sender: string; message: string } | null>(null);
   const [isMailOpen, setIsMailOpen] = useState(false);
+  const [deviceImage, setDeviceImage] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadImage = async () => {
+      const img = await generateQuantumDevice();
+      setDeviceImage(img);
+    };
+    loadImage();
+  }, []);
   const [isComposing, setIsComposing] = useState(false);
   const [mailContent, setMailContent] = useState('');
   const [mailSubject, setMailSubject] = useState('');
@@ -799,6 +798,7 @@ export const QuantumUI = () => {
   const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
   const [temporalFragments, setTemporalFragments] = useState<Record<string, Chapter>>({});
   const [isTemporalEventActive, setIsTemporalEventActive] = useState(false);
+  const [wrongAnswerCount, setWrongAnswerCount] = useState(0);
   const mailImageInputRef = React.useRef<HTMLInputElement>(null);
 
   // Chat States
@@ -948,7 +948,7 @@ export const QuantumUI = () => {
     }
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.XAI_API_KEY });
       let systemPrompt = `Eres ${selectedChatEntity.name}, un ${selectedChatEntity.role}. Bio: ${selectedChatEntity.bio}. Responde al mensaje de ${customDisplayName || 'el Observador'} en el contexto del universo cuántico de Laniakea. Sé breve, místico, sorprendente y mantén el personaje. Usa conceptos de física cuántica, astrología o filosofía según tu perfil.`;
       
       if (isEntangled) {
@@ -964,7 +964,18 @@ export const QuantumUI = () => {
         ]
       });
 
-      setChatMessages(prev => [...prev, { role: 'ai', content: response.text || '...', sender: selectedChatEntity.name }]);
+      const aiText = response.text || '...';
+      setChatMessages(prev => [...prev, { role: 'ai', content: aiText, sender: selectedChatEntity.name }]);
+
+      // Check for wormhole keywords in AI response
+      const lowerReply = aiText.toLowerCase();
+      if (lowerReply.includes('agujero de gusano') || lowerReply.includes('wormhole') || lowerReply.includes('puente einstein-rosen')) {
+        setIsWormholeActive(true);
+        setTransmission({ 
+          sender: 'SISTEMA_ALERTA', 
+          message: 'ESTADO CUÁNTICO ALTERADO: Se ha detectado una anomalía en la rama. El acceso a la rama opuesta está ahora disponible.' 
+        });
+      }
     } catch (error) {
       console.error("Chat Error:", error);
       setChatMessages(prev => [...prev, { role: 'ai', content: 'Error en la conexión interdimensional.', sender: 'SISTEMA' }]);
@@ -998,7 +1009,7 @@ export const QuantumUI = () => {
     if (!mailImagePrompt.trim() || isGeneratingMailImage) return;
     setIsGeneratingMailImage(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.XAI_API_KEY });
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-image",
         contents: [{ parts: [{ text: `A quantum, mystical, artistic representation of: ${mailImagePrompt}. Style: Laniakea universe, ethereal, high contrast, cinematic.` }] }],
@@ -1053,7 +1064,7 @@ export const QuantumUI = () => {
       if (!user) return;
       
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const ai = new GoogleGenAI({ apiKey: process.env.XAI_API_KEY });
         const response = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
           contents: "Genera un fragmento temporal breve (máximo 100 palabras) que sea una noticia curiosa, una receta uruguaya rápida, un dato de deportes de Uruguay, o una anécdota extraña. El tono debe ser 'cuántico' y misterioso. Devuelve un JSON con: title, subtitle, content.",
@@ -1101,9 +1112,10 @@ export const QuantumUI = () => {
     
     const visitCount = visitedChapters[currentChapterKey] || 0;
 
-    // Revisit Glitch Logic (Imaginary Branch)
-    if (visitCount > 1 && baseChapter.branch === 'IMAGINARY') {
-      modifiedContent = `### [ADVERTENCIA: PARADOJA TEMPORAL DETECTADA]
+    // Revisit Glitch Logic
+    if (visitCount > 1) {
+      if (baseChapter.branch === 'IMAGINARY') {
+        modifiedContent = `### [ADVERTENCIA: PARADOJA TEMPORAL DETECTADA]
 
 Has regresado a este nodo, pero el tejido de la **Rama Imaginaria** se ha desgarrado por la redundancia de tu observación. Lo que ves no es el capítulo original, sino un eco corrupto de la información. Las figuras de Einstein y Tesla se desvanecen en estática violeta. Una voz que no pertenece a este mundo susurra desde los espacios entre los párrafos:
 
@@ -1111,10 +1123,23 @@ Has regresado a este nodo, pero el tejido de la **Rama Imaginaria** se ha desgar
 
 El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** que late con la frecuencia del vacío.`;
 
-      extraChoices.push(
-        { text: 'EXPLORAR LA RAMA INEXISTENTE (Ω)', nextChapter: 99, nextBranch: 'IMAGINARY', triggerWormhole: true },
-        { text: 'REESCRIBIR EL PASADO (REINICIO)', nextChapter: 0, nextBranch: 'REAL', triggerWormhole: true }
-      );
+        extraChoices.push(
+          { text: 'EXPLORAR LA RAMA INEXISTENTE (Ω)', nextChapter: 99, nextBranch: 'IMAGINARY', triggerWormhole: true },
+          { text: 'REESCRIBIR EL PASADO (REINICIO)', nextChapter: 0, nextBranch: 'REAL', triggerWormhole: true }
+        );
+      } else {
+        modifiedContent = `### [RE-OBSERVACIÓN DETECTADA]
+
+Has regresado a este punto de la **Realidad**, pero el tiempo no es un círculo, sino una espiral que se degrada. Los detalles que antes eran nítidos ahora parecen borrosos, como una fotografía expuesta demasiadas veces. Silas siente un "déjà vu" tan intenso que le provoca náuseas.
+
+*"¿Ya estuve aquí?"*, se pregunta. Pero las palabras suenan huecas. El entorno ha mutado. La Cámara Zero ahora tiene grietas por donde se filtra una luz negra. La Fundación Laniakea parece haber borrado tus huellas anteriores, dejando solo un rastro de estática.
+
+**[ERROR_DE_REDUNDANCIA]**: Tu presencia aquí está colapsando la estabilidad del sector.`;
+        
+        extraChoices.push(
+          { text: 'FORZAR SALIDA DE EMERGENCIA', nextChapter: baseChapter.id + 1, nextBranch: 'REAL', triggerWormhole: true }
+        );
+      }
     }
 
     // Inject character-specific narrative paths
@@ -1124,13 +1149,11 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
         extraChoices.push({ text: 'ESCUCHAR LOS LATIDOS DE LA PARED', nextChapter: 1, nextBranch: 'IMAGINARY' });
       }
     } else if (characterType === 'VARIABLE') {
-      modifiedContent = modifiedContent.replace(/\./g, ' [Δ].').replace(/,/g, ' [σ],');
       modifiedContent += `\n\n**[ANÁLISIS_PROBABILÍSTICO]**: La probabilidad de colapso en este nodo es de ${(psiValue * 100).toFixed(2)}%. Los vectores de realidad están convergiendo hacia el punto ${baseChapter.fibonacciIndex}.`;
       if (baseChapter.id === 2) {
         extraChoices.push({ text: 'CALCULAR EL ERROR DE REDUNDANCIA', nextChapter: 2, nextBranch: 'IMAGINARY' });
       }
     } else if (characterType === 'DATA') {
-      modifiedContent = modifiedContent.split(' ').map(word => Math.random() > 0.95 ? '01' : word).join(' ');
       modifiedContent += `\n\n**[ACCESO_A_METADATOS]**: ChapterID: ${baseChapter.id} | Branch: ${baseChapter.branch} | Entropy: ${psiValue.toFixed(4)} | Pointer: 0x${(baseChapter.id * 255).toString(16).toUpperCase()}`;
       if (baseChapter.id === 3) {
         extraChoices.push({ text: 'FORZAR DESBORDAMIENTO DE MEMORIA', nextChapter: 3, nextBranch: 'IMAGINARY' });
@@ -1148,22 +1171,9 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
   const isGlitchy = (visitedChapters[currentChapterKey] || 0) > 1 && chapter.branch === 'IMAGINARY';
 
   useEffect(() => {
-    setDisplayedChapterContent("");
-    setIsTypewriterComplete(false);
-    let currentIndex = 0;
     const fullText = ensureString(transformText(chapter.content, isBlackHoleActive));
-    
-    const interval = setInterval(() => {
-      if (currentIndex < fullText.length) {
-        setDisplayedChapterContent(fullText.slice(0, currentIndex + 1));
-        currentIndex++;
-      } else {
-        clearInterval(interval);
-        setIsTypewriterComplete(true);
-      }
-    }, 15); // Adjust speed as needed
-
-    return () => clearInterval(interval);
+    setDisplayedChapterContent(fullText);
+    setIsTypewriterComplete(true);
   }, [chapter.content, isBlackHoleActive]);
 
   useEffect(() => {
@@ -1221,6 +1231,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
 
     if (triggerWormhole) {
       setIsWormholeActive(true);
+      setHasWormholeAccess(true);
       if (characterType === 'HUMAN') setCharacterType('VARIABLE');
       else if (characterType === 'VARIABLE') setCharacterType('DATA');
       
@@ -1306,6 +1317,16 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
       const data = await response.json();
 
       if (data.status === 'delivered') {
+        // Check for wormhole keywords in response
+        const lowerReply = data.body.toLowerCase();
+        if (lowerReply.includes('agujero de gusano') || lowerReply.includes('wormhole') || lowerReply.includes('puente einstein-rosen')) {
+          setIsWormholeActive(true);
+          setTransmission({ 
+            sender: 'SISTEMA_ALERTA', 
+            message: 'ESTADO CUÁNTICO ALTERADO: Se ha detectado una anomalía en la rama. El acceso a la rama opuesta está ahora disponible.' 
+          });
+        }
+
         // Update Firestore with reply
         await setDoc(mailRef, {
           reply: data.body,
@@ -1363,7 +1384,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
       )}
       style={{ background: getChapterBackground(chapter) }}
     >
-      <QuantumParticles userVariable={userVariable} />
+      <QuantumParticles isDarkMode={isDarkMode} />
       {/* Background Grid */}
       <div className={cn(
         "fixed inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none",
@@ -1608,43 +1629,52 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                 </div>
 
                 <div className="space-y-1">
-                  {Object.entries(BOOK_DATA).map(([key, ch]) => (
-                    <button
-                      key={key}
-                      onClick={() => {
-                        setCurrentChapterKey(key);
-                        setVisitedChapters(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
-                      }}
-                      className={cn(
-                        "w-full text-left p-3 rounded-lg transition-all group relative overflow-hidden",
-                        currentChapterKey === key 
-                          ? (isDarkMode ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-50 text-cyan-600")
-                          : (isDarkMode ? "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900")
-                      )}
-                    >
-                      {currentChapterKey === key && (
-                        <motion.div 
-                          layoutId="active-chapter"
-                          className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-500"
-                        />
-                      )}
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[9px] font-mono opacity-50">{key}</span>
-                          <span className={cn(
-                            "text-[8px] px-1.5 py-0.5 rounded font-bold",
-                            ch.branch === 'REAL' 
-                              ? (isDarkMode ? "bg-red-500/10 text-red-500/70" : "bg-red-50 text-red-600/70")
-                              : (isDarkMode ? "bg-purple-500/10 text-purple-500/70" : "bg-purple-50 text-purple-600/70")
-                          )}>
-                            {ch.branch}
-                          </span>
+                  {Object.entries(BOOK_DATA)
+                    .filter(([key, ch]) => {
+                      const hasVisited = visitedChapters[key] !== undefined;
+                      if (!hasVisited) return false;
+                      // If wormhole access is unlocked, show all visited
+                      if (hasWormholeAccess || isWormholeActive) return true;
+                      // Otherwise show only chapters from the current branch
+                      return ch.branch === chapter.branch;
+                    })
+                    .map(([key, ch]) => (
+                      <button
+                        key={key}
+                        onClick={() => {
+                          setCurrentChapterKey(key);
+                          setVisitedChapters(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+                        }}
+                        className={cn(
+                          "w-full text-left p-3 rounded-lg transition-all group relative overflow-hidden",
+                          currentChapterKey === key 
+                            ? (isDarkMode ? "bg-cyan-500/10 text-cyan-400" : "bg-cyan-50 text-cyan-600")
+                            : (isDarkMode ? "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300" : "text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900")
+                        )}
+                      >
+                        {currentChapterKey === key && (
+                          <motion.div 
+                            layoutId="active-chapter"
+                            className="absolute left-0 top-0 bottom-0 w-1 bg-cyan-500"
+                          />
+                        )}
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[9px] font-mono opacity-50">{key}</span>
+                            <span className={cn(
+                              "text-[8px] px-1.5 py-0.5 rounded font-bold",
+                              ch.branch === 'REAL' 
+                                ? (isDarkMode ? "bg-red-500/10 text-red-500/70" : "bg-red-50 text-red-600/70")
+                                : (isDarkMode ? "bg-purple-500/10 text-purple-500/70" : "bg-purple-50 text-purple-600/70")
+                            )}>
+                              {ch.branch}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold truncate tracking-tight">{ch.title}</span>
+                          <span className="text-[10px] opacity-60 truncate font-medium italic">{ch.subtitle}</span>
                         </div>
-                        <span className="text-xs font-bold truncate tracking-tight">{ch.title}</span>
-                        <span className="text-[10px] opacity-60 truncate font-medium italic">{ch.subtitle}</span>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    ))}
                 </div>
 
                 {Object.keys(temporalFragments).length > 0 && (
@@ -1654,26 +1684,31 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                       <div className="h-px flex-1 bg-purple-500/20 ml-4" />
                     </div>
                     <div className="space-y-1">
-                      {Object.entries(temporalFragments).map(([key, ch]) => (
-                        <button
-                          key={key}
-                          onClick={() => setCurrentChapterKey(key)}
-                          className={cn(
-                            "w-full text-left p-3 rounded-lg transition-all group relative overflow-hidden",
-                            currentChapterKey === key 
-                              ? "bg-purple-500/10 text-purple-400"
-                              : "text-zinc-500 hover:bg-zinc-800/50 hover:text-purple-300"
-                          )}
-                        >
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-[9px] font-mono opacity-50">FRAG_{key}</span>
-                              <Zap size={10} className="text-purple-500" />
+                      {Object.entries(temporalFragments)
+                        .filter(([key]) => visitedChapters[key] !== undefined)
+                        .map(([key, ch]) => (
+                          <button
+                            key={key}
+                            onClick={() => {
+                              setCurrentChapterKey(key);
+                              setVisitedChapters(prev => ({ ...prev, [key]: (prev[key] || 0) + 1 }));
+                            }}
+                            className={cn(
+                              "w-full text-left p-3 rounded-lg transition-all group relative overflow-hidden",
+                              currentChapterKey === key 
+                                ? "bg-purple-500/10 text-purple-400"
+                                : "text-zinc-500 hover:bg-zinc-800/50 hover:text-purple-300"
+                            )}
+                          >
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center justify-between">
+                                <span className="text-[9px] font-mono opacity-50">FRAG_{key}</span>
+                                <Zap size={10} className="text-purple-500" />
+                              </div>
+                              <span className="text-xs font-bold truncate tracking-tight">{ch.title}</span>
                             </div>
-                            <span className="text-xs font-bold truncate tracking-tight">{ch.title}</span>
-                          </div>
-                        </button>
-                      ))}
+                          </button>
+                        ))}
                     </div>
                   </div>
                 )}
@@ -1691,17 +1726,16 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentChapterKey}
-                initial={{ opacity: 0, rotateY: 45, scale: 0.95, filter: 'blur(10px)' }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ 
                   opacity: 1, 
-                  rotateY: 0, 
+                  y: 0,
                   scale: 1, 
-                  filter: isGlitchy ? 'blur(0.5px)' : 'blur(0px)',
                 }}
-                exit={{ opacity: 0, rotateY: -45, scale: 1.05, filter: 'blur(10px)' }}
+                exit={{ opacity: 0, y: -20 }}
                 transition={{ 
-                  duration: 0.6, 
-                  ease: "circOut"
+                  duration: 0.4, 
+                  ease: "easeOut"
                 }}
               >
             {isGlitchy && (
@@ -1743,14 +1777,11 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
 
             <div className={cn(
               "prose max-w-none transition-all duration-700",
-              isDarkMode ? "prose-invert prose-zinc" : "prose-zinc",
-              chapter.branch === 'IMAGINARY' && "skew-x-1 opacity-90",
-              characterType === 'DATA' && "blur-[0.5px] brightness-125",
-              isBlackHoleActive && "invert hue-rotate-180"
+              isDarkMode ? "prose-invert prose-zinc" : "prose-zinc"
             )}>
               <div className={cn(
                 "text-lg leading-relaxed space-y-6 transition-colors",
-                isDarkMode ? "text-zinc-400" : "text-zinc-600"
+                isDarkMode ? "text-zinc-200" : "text-zinc-800"
               )}>
                 <ReactMarkdown 
                   remarkPlugins={[remarkMath]} 
@@ -1849,6 +1880,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                           const newCount = solvedEnigmasCount + 1;
                           setSolvedEnigmasCount(newCount);
                           setCurrentHint(null);
+                          setWrongAnswerCount(0);
                           
                           // Resolving an enigma can stabilize the black hole
                           if (isBlackHoleActive) {
@@ -1865,7 +1897,35 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                           }
                         } else {
                           setIsWrongAnswer(true);
+                          const newWrongCount = wrongAnswerCount + 1;
+                          setWrongAnswerCount(newWrongCount);
                           setPsiValue(prev => prev + 0.01);
+                          
+                          if (newWrongCount >= 5) {
+                            setIsBlackHoleActive(true);
+                            setTransmission({
+                              sender: 'SISTEMA_ALERTA',
+                              message: 'ERROR CRÍTICO: Demasiados intentos fallidos. Singularidad detectada. La realidad está colapsando.'
+                            });
+                          } else if (newWrongCount >= 3) {
+                            const s = 'Dr. Aris Thorne';
+                            const enigma = chapter.enigma || '';
+                            const hints: Record<string, string> = {
+                              'La Realidad': 'Pista Avanzada: No es lo que ves, sino el acto de ver en sí mismo. El colapso es la clave.',
+                              'Duda': 'Pista Avanzada: Es lo opuesto a la certeza. El peso que te impide flotar en el vacío.',
+                              'Observador': 'Pista Avanzada: Tú eres la variable que falta. Sin ti, no hay colapso.',
+                              '3': 'Pista Avanzada: Tesla decía que si conocieras la magnificencia del 3, 6 y 9, tendrías la llave del universo.',
+                              'Tesla': 'Pista Avanzada: El inventor de la corriente alterna. Su nombre es la respuesta.',
+                              '-1': 'Pista Avanzada: La unidad imaginaria "i" al cuadrado es igual a este número.',
+                              'Obsidiana': 'Pista Avanzada: Un vidrio volcánico negro. Refleja la oscuridad del alma.',
+                              'Dualidad': 'Pista Avanzada: Onda y partícula. Dos estados para una misma esencia.'
+                            };
+                            setCurrentHint({
+                              sender: s,
+                              message: hints[enigma] || `Sugerencia: El término "${enigma}" es fundamental. Revisa los archivos de la rama opuesta.`
+                            });
+                          }
+                          
                           setTimeout(() => setIsWrongAnswer(false), 1000);
                         }
                       }}
@@ -1960,6 +2020,27 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                   "grid gap-4",
                   chapter.id === 0 ? "grid-cols-2" : "grid-cols-1"
                 )}>
+                  {isWormholeActive && (
+                    <motion.button
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      onClick={() => {
+                        const nextBranch = chapter.branch === 'REAL' ? 'IMAGINARY' : 'REAL';
+                        const chapterNum = currentChapterKey.split('-')[0];
+                        setCurrentChapterKey(`${chapterNum}-${nextBranch}`);
+                        setIsWormholeActive(false);
+                        setTransmission({
+                          sender: 'SISTEMA',
+                          message: `SALTO DIMENSIONAL COMPLETADO. AHORA EN RAMA_${nextBranch}.`
+                        });
+                      }}
+                      className="w-full p-8 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 text-white font-black rounded-lg shadow-[0_0_30px_rgba(147,51,234,0.2)] border border-purple-500/50 hover:border-cyan-500 hover:scale-[1.02] active:scale-95 transition-all uppercase tracking-[0.3em] flex flex-col items-center justify-center gap-4 min-h-[160px] group"
+                    >
+                      <Zap className="animate-pulse text-cyan-500 group-hover:text-white transition-colors" size={32} />
+                      <span className="text-sm">ENTRAR EN AGUJERO DE GUSANO</span>
+                      <div className="text-[10px] font-mono text-zinc-500 group-hover:text-cyan-400 transition-colors">Destino: Rama_{chapter.branch === 'REAL' ? 'IMAGINARIA' : 'REAL'}</div>
+                    </motion.button>
+                  )}
                   {chapter.choices.map((choice, i) => (
                     <motion.button
                       key={i}
@@ -2044,6 +2125,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
             setActiveSimulation={setActiveSimulation}
             isDarkMode={isDarkMode} 
             onClose={() => setShowPhysicsLab(false)} 
+            deviceImage={deviceImage}
           />
         )}
       </AnimatePresence>
@@ -2089,284 +2171,250 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
 
       {/* Temporal Transmission Notification (Removed as per request, using dot instead) */}
 
-      {/* Quantum Mail Modal */}
+      {/* Quantum Mail UI */}
       <AnimatePresence>
         {isMailOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/90 backdrop-blur-xl flex items-center justify-center p-6"
+            className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
           >
             <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
               className={cn(
-                "w-full max-w-2xl border rounded-xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh] transition-colors",
+                "w-full max-w-6xl h-[85vh] border rounded-xl overflow-hidden flex flex-col shadow-2xl",
                 isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
               )}
             >
+              {/* Mail Header */}
               <div className={cn(
                 "p-4 border-b flex items-center justify-between",
                 isDarkMode ? "border-zinc-800 bg-zinc-900/50" : "border-zinc-200 bg-zinc-50"
               )}>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-cyan-500 font-mono text-xs tracking-widest">
-                    <Mail size={14} className="animate-bounce" />
-                    <span>LANIAKEA_MESSENGER_v1.0</span>
-                    <BlinkingCursor className="h-3 w-1" />
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                    <Mail size={20} className="text-cyan-500" />
                   </div>
-                  <div className="flex bg-black/20 rounded-md p-0.5">
+                  <div>
+                    <h2 className="text-lg font-black tracking-tighter uppercase">Laniakea Messenger v1.0</h2>
+                    <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Protocolo de Comunicación Interdimensional</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsMailOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                  <X size={24} className="text-zinc-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 flex overflow-hidden">
+                {/* Mail Sidebar */}
+                <div className={cn(
+                  "w-64 border-r flex flex-col p-4 gap-4",
+                  isDarkMode ? "border-zinc-800 bg-black/20" : "border-zinc-200 bg-zinc-50/30"
+                )}>
+                  <button 
+                    onClick={() => setIsComposing(true)}
+                    className="w-full py-3 bg-cyan-500 text-black font-bold rounded-lg flex items-center justify-center gap-2 hover:bg-cyan-400 transition-all shadow-[0_0_15px_rgba(6,182,212,0.3)]"
+                  >
+                    <Zap size={16} /> REDACTAR
+                  </button>
+                  
+                  <nav className="flex flex-col gap-1">
                     <button 
                       onClick={() => { setMailTab('inbox'); setIsComposing(false); }}
                       className={cn(
-                        "px-3 py-1 rounded text-[10px] font-bold transition-all",
-                        mailTab === 'inbox' && !isComposing ? "bg-cyan-500 text-black" : "text-zinc-500 hover:text-zinc-300"
+                        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-mono text-xs",
+                        mailTab === 'inbox' && !isComposing ? "bg-zinc-800 text-cyan-400" : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300"
                       )}
                     >
-                      INBOX
+                      <Mail size={16} /> RECIBIDOS
                     </button>
                     <button 
                       onClick={() => { setMailTab('outbox'); setIsComposing(false); }}
                       className={cn(
-                        "px-3 py-1 rounded text-[10px] font-bold transition-all",
-                        mailTab === 'outbox' && !isComposing ? "bg-cyan-500 text-black" : "text-zinc-500 hover:text-zinc-300"
+                        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-mono text-xs",
+                        mailTab === 'outbox' && !isComposing ? "bg-zinc-800 text-cyan-400" : "text-zinc-500 hover:bg-zinc-800/50 hover:text-zinc-300"
                       )}
                     >
-                      SENT
+                      <Send size={16} /> ENVIADOS
                     </button>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={() => setIsComposing(!isComposing)}
-                    className={cn(
-                      "px-3 py-1 rounded text-[10px] font-bold transition-all border",
-                      isComposing 
-                        ? "bg-zinc-800 border-zinc-700 text-zinc-400" 
-                        : "bg-cyan-500/10 border-cyan-500/30 text-cyan-500 hover:bg-cyan-500/20"
-                    )}
-                  >
-                    {isComposing ? '[CANCELAR]' : '[NUEVO_MENSAJE]'}
-                  </button>
-                  <button 
-                    onClick={() => setIsMailOpen(false)}
-                    className={cn(
-                      "text-xs font-mono transition-colors hover:underline",
-                      isDarkMode ? "text-zinc-500 hover:text-white" : "text-zinc-400 hover:text-black"
-                    )}
-                  >
-                    [X]
-                  </button>
-                </div>
-              </div>
+                  </nav>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 font-mono text-sm">
-                {!user && (
-                  <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-12">
-                    <AlertTriangle className="text-yellow-500" size={48} />
-                    <div className="text-xl font-bold">CONEXIÓN_NO_AUTORIZADA</div>
-                    <p className="text-zinc-500 max-w-xs">Debes autenticar tu firma cuántica para acceder al servidor de correo de Laniakea.</p>
-                    <button 
-                      onClick={signInWithGoogle}
-                      className="px-8 py-3 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 transition-all"
-                    >
-                      AUTENTICAR CON GOOGLE
-                    </button>
-                  </div>
-                )}
-
-                {user && isComposing && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={cn(
-                      "p-6 border rounded-xl shadow-2xl",
-                      isDarkMode ? "bg-black/40 border-zinc-800" : "bg-zinc-50 border-zinc-200"
-                    )}
-                  >
-                    <div className="text-xs font-bold text-cyan-500 mb-6 flex items-center gap-2">
-                      <Zap size={14} />
-                      <span>NUEVA_TRANSMISIÓN_CUÁNTICA</span>
+                  <div className="mt-auto pt-4 border-t border-zinc-800/50">
+                    <div className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Contactos de Rama</div>
+                    <div className="flex flex-col gap-2">
+                      {chatEntities.slice(0, 5).map(e => (
+                        <div key={e.id} className="flex items-center gap-2 group cursor-pointer">
+                          <div className={cn("w-2 h-2 rounded-full", e.color.replace('text-', 'bg-'))} />
+                          <span className="text-[10px] text-zinc-500 group-hover:text-zinc-300 transition-colors">{e.name}</span>
+                        </div>
+                      ))}
                     </div>
-                    
-                    <div className="space-y-4">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Destinatario:</label>
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                          {chatEntities.map(entity => (
-                            <button
-                              key={entity.id}
-                              onClick={() => setSelectedRecipient(entity.name)}
-                              className={cn(
-                                "px-3 py-1 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border",
-                                selectedRecipient === entity.name 
-                                  ? "bg-cyan-500 border-cyan-400 text-black shadow-[0_0_10px_rgba(6,182,212,0.5)]" 
-                                  : "bg-zinc-800/50 border-zinc-700 text-zinc-500 hover:text-zinc-300"
-                              )}
-                            >
-                              {entity.name.toUpperCase()}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
+                  </div>
+                </div>
 
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Asunto:</label>
-                        <input
-                          type="text"
-                          value={mailSubject}
-                          onChange={(e) => setMailSubject(e.target.value)}
-                          placeholder="ASUNTO DE LA TRANSMISIÓN..."
-                          className={cn(
-                            "w-full border px-4 py-2 font-mono text-xs outline-none rounded-lg transition-all",
-                            isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
-                          )}
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Contenido:</label>
-                        <textarea
-                          value={mailContent}
-                          onChange={(e) => setMailContent(e.target.value)}
-                          placeholder={`Escribe tu mensaje para ${selectedRecipient}...`}
-                          className={cn(
-                            "w-full border px-4 py-3 font-mono text-xs outline-none rounded-lg transition-all min-h-[150px] resize-none",
-                            isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
-                          )}
-                        />
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Generación de Imagen Cuántica:</label>
-                        <div className="flex gap-2">
-                          <input 
-                            type="text"
-                            value={mailImagePrompt}
-                            onChange={(e) => setMailImagePrompt(e.target.value)}
-                            placeholder="Describe la imagen que deseas generar..."
-                            className={cn(
-                              "flex-1 border px-4 py-2 font-mono text-[10px] outline-none rounded-lg transition-all",
-                              isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
-                            )}
-                            onKeyDown={(e) => e.key === 'Enter' && handleGenerateMailImage()}
-                          />
-                          <button 
-                            onClick={handleGenerateMailImage}
-                            disabled={isGeneratingMailImage || !mailImagePrompt.trim()}
-                            className={cn(
-                              "px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-[10px] font-bold border whitespace-nowrap",
-                              isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-cyan-400" : "bg-zinc-100 border-zinc-200 text-zinc-600 hover:text-cyan-600"
-                            )}
-                          >
-                            {isGeneratingMailImage ? <Activity size={14} className="animate-spin" /> : <Sparkles size={14} />}
-                            {isGeneratingMailImage ? 'GENERANDO...' : 'GENERAR'}
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Adjuntos:</label>
-                        <div className="flex gap-4 items-center">
-                          <input 
-                            type="file" 
-                            ref={mailImageInputRef} 
-                            onChange={handleImageSelect} 
-                            accept="image/*" 
-                            className="hidden" 
-                          />
-                          <button
-                            onClick={() => mailImageInputRef.current?.click()}
-                            className={cn(
-                              "flex items-center gap-2 px-4 py-2 border rounded-lg font-mono text-[10px] font-bold transition-all",
-                              isDarkMode ? "bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:text-white" : "bg-zinc-100 border-zinc-200 text-zinc-500 hover:text-black"
-                            )}
-                          >
-                            <ImageIcon size={14} />
-                            SUBIR ARCHIVO
-                          </button>
-                          {(selectedMailImage || lastGeneratedImage) && (
-                            <div className="relative group">
-                              <img src={selectedMailImage || lastGeneratedImage!} alt="Preview" className="w-12 h-12 rounded border border-cyan-500 object-cover" />
-                              <button 
-                                onClick={() => { setSelectedMailImage(null); setLastGeneratedImage(null); }}
-                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X size={10} />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end gap-3 pt-4">
-                        <button
-                          onClick={() => {
-                            handleSendMessage();
-                            setIsComposing(false);
-                          }}
-                          disabled={isSendingMail || !mailContent.trim()}
-                          className={cn(
-                            "px-8 py-2 text-black font-black uppercase tracking-widest text-xs rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2",
-                            (isSendingMail || !mailContent.trim()) 
-                              ? "bg-zinc-500 opacity-50 cursor-not-allowed" 
-                              : "bg-cyan-500 hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)]"
-                          )}
-                        >
-                          {isSendingMail ? <Activity size={16} className="animate-spin" /> : <><Send size={14} /> ENVIAR_TRANSMISIÓN</>}
+                {/* Mail Content Area */}
+                <div className="flex-1 flex flex-col overflow-hidden">
+                  {!user ? (
+                    <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-12">
+                      <AlertTriangle className="text-yellow-500" size={48} />
+                      <div className="text-xl font-bold">CONEXIÓN_NO_AUTORIZADA</div>
+                      <p className="text-zinc-500 max-w-xs">Debes autenticar tu firma cuántica para acceder al servidor de correo de Laniakea.</p>
+                      <button 
+                        onClick={signInWithGoogle}
+                        className="px-8 py-3 bg-cyan-500 text-black font-bold rounded-md hover:bg-cyan-400 transition-all"
+                      >
+                        AUTENTICAR CON GOOGLE
+                      </button>
+                    </div>
+                  ) : isComposing ? (
+                    <div className="flex-1 p-8 flex flex-col gap-6 overflow-y-auto">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold tracking-tight text-white">Nuevo Mensaje Cuántico</h3>
+                        <button onClick={() => setIsComposing(false)} className="text-zinc-500 hover:text-white transition-colors">
+                          <X size={20} />
                         </button>
                       </div>
-
-                      {lastGeneratedImage && (
-                        <motion.div 
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          className="mt-4 relative group"
-                        >
-                          <img src={lastGeneratedImage} alt="Quantum" className="w-full h-48 object-cover rounded-lg border border-cyan-500/30" referrerPolicy="no-referrer" />
-                          <button 
-                            onClick={() => setLastGeneratedImage(null)}
-                            className="absolute top-2 right-2 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                      
+                      <div className="space-y-4">
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-mono text-zinc-500 uppercase">Destinatario</label>
+                          <select 
+                            value={selectedRecipient}
+                            onChange={(e) => setSelectedRecipient(e.target.value)}
+                            className="bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-white font-mono text-sm outline-none focus:border-cyan-500"
                           >
-                            <ChevronRight className="rotate-90" size={14} />
-                          </button>
-                          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-[8px] font-bold text-cyan-400 uppercase tracking-widest">
-                            Visualización Cuántica Generada
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
+                            {chatEntities.map(e => (
+                              <option key={e.id} value={e.name}>{e.name} ({e.role})</option>
+                            ))}
+                          </select>
+                        </div>
 
-                {user && !isComposing && (
-                  <div className="space-y-6">
-                    {mailTab === 'inbox' ? (
-                      mails.filter(m => m.reply).length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-50">
-                          <Mail size={48} className="text-zinc-700" />
-                          <div className="text-sm italic">No hay transmisiones entrantes en este sector.</div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-mono text-zinc-500 uppercase">Asunto</label>
+                          <input 
+                            type="text"
+                            value={mailSubject}
+                            onChange={(e) => setMailSubject(e.target.value)}
+                            placeholder="Asunto de la consulta..."
+                            className="bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-white font-mono text-sm outline-none focus:border-cyan-500"
+                          />
                         </div>
-                      ) : (
-                        mails.filter(m => m.reply).map((mail, i) => (
-                          <MailCard key={mail.id || i} mail={mail} isInbox={true} isDarkMode={isDarkMode} />
-                        ))
-                      )
-                    ) : (
-                      mails.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-50">
-                          <Zap size={48} className="text-zinc-700" />
-                          <div className="text-sm italic">No has iniciado ninguna transmisión temporal.</div>
+
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[10px] font-mono text-zinc-500 uppercase">Mensaje</label>
+                          <textarea 
+                            value={mailContent}
+                            onChange={(e) => setMailContent(e.target.value)}
+                            placeholder="Escribe tu mensaje aquí..."
+                            className="bg-zinc-800 border border-zinc-700 p-3 rounded-lg text-white font-mono text-sm outline-none focus:border-cyan-500 min-h-[200px] resize-none"
+                          />
                         </div>
-                      ) : (
-                        mails.map((mail, i) => (
-                          <MailCard key={mail.id || i} mail={mail} isInbox={false} isDarkMode={isDarkMode} />
-                        ))
-                      )
-                    )}
-                  </div>
-                )}
+
+                        <div className="flex items-center justify-between pt-4">
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => mailImageInputRef.current?.click()}
+                              className="p-3 bg-zinc-800 text-zinc-400 rounded-lg hover:bg-zinc-700 hover:text-white transition-all"
+                              title="Adjuntar Imagen"
+                            >
+                              <ImageIcon size={20} />
+                            </button>
+                            <input 
+                              type="file" 
+                              ref={mailImageInputRef} 
+                              className="hidden" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => setSelectedMailImage(reader.result as string);
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                            />
+                          </div>
+                          <button 
+                            onClick={handleSendMessage}
+                            disabled={isSendingMail || !mailContent.trim()}
+                            className="px-8 py-3 bg-cyan-500 text-black font-bold rounded-lg hover:bg-cyan-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                          >
+                            {isSendingMail ? <Activity className="animate-spin" size={18} /> : <Send size={18} />}
+                            ENVIAR
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                      <div className="p-4 border-b border-zinc-800/50 bg-black/10 flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2 px-3 py-1 bg-zinc-800 rounded-full border border-zinc-700">
+                            <Search size={12} className="text-zinc-500" />
+                            <input type="text" placeholder="Buscar en Laniakea..." className="bg-transparent border-none outline-none text-[10px] text-zinc-300 w-32" />
+                          </div>
+                        </div>
+                        <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">
+                          {mailTab === 'inbox' ? 'Bandeja de Entrada' : 'Mensajes Enviados'}
+                        </div>
+                      </div>
+
+                      <div className="flex-1 overflow-y-auto">
+                        {mails.filter(m => mailTab === 'inbox' ? m.status === 'DELIVERED' : m.status === 'SENT').length === 0 ? (
+                          <div className="h-full flex flex-col items-center justify-center text-zinc-600 gap-4">
+                            <Mail size={48} className="opacity-20" />
+                            <p className="font-mono text-xs uppercase tracking-widest">No hay mensajes en esta rama</p>
+                          </div>
+                        ) : (
+                          <div className="divide-y divide-zinc-800/30">
+                            {mails
+                              .filter(m => mailTab === 'inbox' ? m.status === 'DELIVERED' : m.status === 'SENT')
+                              .sort((a, b) => (b.sentAt?.seconds || 0) - (a.sentAt?.seconds || 0))
+                              .map((m, idx) => (
+                                <motion.div 
+                                  key={idx}
+                                  initial={{ opacity: 0, y: 10 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  className="p-6 hover:bg-zinc-800/30 transition-colors cursor-pointer group relative"
+                                >
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-cyan-500 font-bold">
+                                        {(mailTab === 'inbox' ? m.recipient : 'TÚ')[0]}
+                                      </div>
+                                      <div>
+                                        <div className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors">
+                                          {mailTab === 'inbox' ? m.recipient : `Para: ${m.recipient}`}
+                                        </div>
+                                        <div className="text-[10px] text-zinc-500 font-mono">
+                                          {m.sentAt?.toDate().toLocaleString() || 'Transmitiendo...'}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="px-2 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded text-[8px] text-cyan-500 font-mono">
+                                      {m.senderBranch}
+                                    </div>
+                                  </div>
+                                  <h4 className="text-xs font-bold text-zinc-300 mb-2 uppercase tracking-tight">{m.subject}</h4>
+                                  <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">
+                                    {mailTab === 'inbox' ? m.reply : m.body}
+                                  </p>
+                                  
+                                  {m.imageUrl && (
+                                    <div className="mt-4 w-32 aspect-video rounded-lg overflow-hidden border border-zinc-800">
+                                      <img src={m.imageUrl} alt="Adjunto" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                    </div>
+                                  )}
+                                </motion.div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Status Bar */}
@@ -2386,7 +2434,6 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                   <span>BRANCH: {chapter.branch}</span>
                 </div>
               </div>
-
             </motion.div>
           </motion.div>
         )}
@@ -2594,7 +2641,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                               ? "bg-cyan-500 text-black font-medium rounded-tr-none"
                               : isDarkMode ? "bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-tl-none" : "bg-white border border-zinc-200 text-zinc-800 rounded-tl-none",
                             isEntangled && "animate-pulse shadow-[0_0_20px_rgba(168,85,247,0.3)]",
-                            isEntangled && isEntanglementPulseActive && msg.role === 'user' && i === chatMessages.length - 1 && "scale-105 rotate-1 blur-[1px] brightness-150"
+                            isEntangled && isEntanglementPulseActive && msg.role === 'user' && i === chatMessages.length - 1 && "scale-105 rotate-1 brightness-110"
                           )}>
                             {isEntangled && (
                               <motion.div 

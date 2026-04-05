@@ -135,6 +135,47 @@ async function startServer() {
     }
   });
 
+  // General Quantum Chat Route
+  app.post("/api/quantum-chat", async (req, res) => {
+    try {
+      const { messages, systemPrompt } = req.body;
+      const XAI_API_KEY = process.env.XAI_API_KEY;
+
+      if (!XAI_API_KEY) {
+        return res.status(500).json({ error: "XAI_API_KEY no configurada" });
+      }
+
+      const response = await fetch("https://api.x.ai/v1/responses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${XAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "grok-4.20-reasoning",
+          input: `${systemPrompt}\n\nHistorial:\n${messages.map((m: any) => `${m.role}: ${m.content}`).join('\n')}`,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        return res.status(response.status).json(data);
+      }
+
+      let replyRaw = data.response || data.output || data;
+      if (Array.isArray(replyRaw) && replyRaw[0]?.content && Array.isArray(replyRaw[0].content)) {
+        const textContent = replyRaw[0].content.find((c: any) => c.type === 'output_text');
+        if (textContent) replyRaw = textContent.text;
+      }
+      
+      const reply = typeof replyRaw === 'string' ? replyRaw : JSON.stringify(replyRaw);
+      res.json({ reply });
+    } catch (error) {
+      console.error("Chat API Error:", error);
+      res.status(500).json({ error: "Error en la comunicación cuántica" });
+    }
+  });
+
   // xAI Image Generation Route
   app.post("/api/quantum-image", async (req, res) => {
     try {

@@ -107,7 +107,6 @@ Pegada al marco de la puerta, una **nota de la Fundación Laniakea** advierte:
 La puerta se abre para revelar un **pasillo infinito**, iluminado por luces de neón que parpadean con una frecuencia matemática. Las paredes están cubiertas de arriba abajo con una fórmula escrita en pintura fluorescente: **$Realidad = \int Duda \, dt$**. Silas siente que el pasillo no es un lugar, sino una progresión, y que cada paso que da es una operación aritmética en el gran cálculo de su vida.`,
     choices: [
       { text: 'CORRER HACIA EL FINAL DEL PASILLO', nextChapter: 2 },
-      { text: 'TOCAR LA PARED DE LA IZQUIERDA', nextChapter: 1, nextBranch: 'IMAGINARY', triggerWormhole: true },
       { text: 'ANALIZAR LA FÓRMULA', nextChapter: 2, nextBranch: 'REAL' }
     ],
     enigma: 'Duda',
@@ -140,7 +139,6 @@ Einstein se inclina hacia adelante, y su rostro se vuelve momentáneamente un ma
 —Él es el motor de esta maquinaria, Silas, pero tú eres el combustible —continúa Albert, su voz resonando como si hablara desde el interior de un piano—. Él cree que nos está leyendo, pero en realidad, nosotros le estamos ocurriendo a él. Ahora, dime: ¿prefieres aceptar la solidez de ser un personaje en su libro, o la libertad de ser una variable imaginaria en su mente? El colapso es inevitable, pero la dirección de la caída es tuya.`,
     choices: [
       { text: 'YO SOY EL LIBRO', nextChapter: 2, nextBranch: 'IMAGINARY' },
-      { text: 'EL LECTOR ES MI IMAGINACIÓN', nextChapter: 2, nextBranch: 'REAL', triggerWormhole: true },
       { text: 'PREGUNTAR POR LA FOTO', nextChapter: 2, nextBranch: 'IMAGINARY' }
     ],
     enigma: 'Observador',
@@ -168,8 +166,7 @@ En el centro de la sala, sobre un pedestal de mármol negro, hay un diario con l
 
 Silas mira a uno de sus reflejos. El reflejo no le imita; está sentado en el suelo, llorando.`,
     choices: [
-      { text: 'TOCAR EL ESPEJO', nextChapter: 3 },
-      { text: 'BUSCAR EL ERROR DE PARIDAD', nextChapter: 2, nextBranch: 'IMAGINARY', triggerWormhole: true }
+      { text: 'TOCAR EL ESPEJO', nextChapter: 3 }
     ],
     enigma: '3',
     artifacts: [
@@ -194,8 +191,7 @@ Silas mira a uno de sus reflejos. El reflejo no le imita; está sentado en el su
 Tesla se acerca a ti. Sus ojos emiten una luz azul cobalto.
 —La Fundación Laniakea no es un laboratorio, es una **antena**. Están usando tu cerebro como un repetidor para transmitir la realidad de Silas a otras dimensiones. ¡Los Presidentes! ¡Los Reyes! ¡Todos son solo receptores de esta señal!`,
     choices: [
-      { text: 'SINTONIZAR LA BOBINA', nextChapter: 3, nextBranch: 'IMAGINARY' },
-      { text: 'GOLPEAR EL AIRE', nextChapter: 3, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'SINTONIZAR LA BOBINA', nextChapter: 3, nextBranch: 'IMAGINARY' }
     ],
     enigma: 'Tesla',
     artifacts: [
@@ -221,8 +217,7 @@ En una esquina de este cubo fractal, Silas encuentra un **Archivador de Metal** 
 > **DIAGNÓSTICO:** Esquizofrenia Cuántica Inducida.
 > **OBSERVACIONES:** El sujeto manifiesta "Afenia Narrativa". Cree firmemente que sus movimientos son dictados por un observador externo a través de un dispositivo de lectura. Durante la última sesión, el Dr. Thorne intentó explicarle que él no es el protagonista, sino el *soporte lógico* de la historia.`,
     choices: [
-      { text: 'ESTABILIZAR LA ROTACIÓN', nextChapter: 5 },
-      { text: 'DEJARSE LLEVAR POR LA FUERZA CENTRÍFUGA', nextChapter: 3, nextBranch: 'IMAGINARY', triggerWormhole: true }
+      { text: 'ESTABILIZAR LA ROTACIÓN', nextChapter: 5 }
     ],
     artifacts: [
       {
@@ -245,8 +240,7 @@ En una esquina de este cubo fractal, Silas encuentra un **Archivador de Metal** 
 Al probar el "pan", los muros de la realidad se vuelven transparentes. Puedes ver a los científicos de Laniakea (Thorne y Vance) moviéndose como hormigas en un plano inferior. Jesús te mira con una tristeza infinita.
 —Incluso Einstein y Tesla son solo sombras en esta caverna. El Lector cree que tiene el control porque puede cerrar el libro. Pero no sabe que, al cerrarlo, solo está guardando la partida en una dimensión que nosotros controlamos.`,
     choices: [
-      { text: 'BEBER DE LA FUENTE', nextChapter: 5, nextBranch: 'IMAGINARY' },
-      { text: 'VOLVER AL CÓDIGO', nextChapter: 5, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'BEBER DE LA FUENTE', nextChapter: 5, nextBranch: 'IMAGINARY' }
     ],
     enigma: '-1',
     artifacts: [
@@ -270,8 +264,7 @@ En medio del jardín, hay un **Terminal de Computadora** de mármol. En la panta
 
 > *"He descubierto que la Proporción Áurea ($\phi$) es en realidad una velocidad de consumo. El libro 'consume' la atención del lector para alimentar la realidad de Silas. Cuanto más se concentra el lector, más nítido es el mundo de Silas, pero más cerca estamos del Colapso de Función."*`,
     choices: [
-      { text: 'ROMPER EL ESPEJO', nextChapter: 8 },
-      { text: 'LEER EL LIBRO', nextChapter: 5, nextBranch: 'IMAGINARY', triggerWormhole: true }
+      { text: 'ROMPER EL ESPEJO', nextChapter: 8 }
     ],
     enigma: 'Proporcion Aurea',
     artifacts: [
@@ -296,8 +289,7 @@ En medio del jardín, hay un **Terminal de Computadora** de mármol. En la panta
 Oppenheimer te muestra una **Bomba de Hidrógeno** que tiene el tamaño de un grano de arena.
 —Esta es la 'Singularidad de la Trama'. Si la detonas, todos los finales posibles ocurrirán a la vez. El Lector enloquecerá porque leerá todas las páginas al mismo tiempo. Es la única forma de detener la Normalización.`,
     choices: [
-      { text: 'MANTENER EL ORDEN', nextChapter: 8, nextBranch: 'IMAGINARY' },
-      { text: 'DETONAR EL CAOS', nextChapter: 8, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'MANTENER EL ORDEN', nextChapter: 8, nextBranch: 'IMAGINARY' }
     ],
     enigma: 'Singularidad',
     artifacts: [
@@ -319,8 +311,7 @@ Oppenheimer te muestra una **Bomba de Hidrógeno** que tiene el tamaño de un gr
 
 Encuentra un **Cuerpo** tendido en el suelo. No es un cadáver real; es un maniquí hecho de papel de periódico. Al acercarse, ve que las noticias impresas en el maniquí son noticias de TU mundo, lector. Titulares sobre política, clima y tecnología de la semana pasada. El maniquí tiene una etiqueta en la muñeca: **"NOMBRE: SILAS. CAUSA DE MUERTE: OBSERVACIÓN EXCESIVA"**.`,
     choices: [
-      { text: 'BORRAR AL LECTOR', nextChapter: 13 },
-      { text: 'BORRAR A SILAS', nextChapter: 0, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'BORRAR AL LECTOR', nextChapter: 13 }
     ],
     artifacts: [
       {
@@ -344,8 +335,7 @@ Encuentra un **Cuerpo** tendido en el suelo. No es un cadáver real; es un maniq
 A su lado, **Abraham Lincoln** (hecho de piedra de mármol viva) asiente.
 —Hemos gobernado las sombras para que tú pudieras llegar aquí, Silas. Somos los Guardianes de la Probabilidad. El Lector cree en la democracia, pero aquí solo existe la **Dictadura de la Función de Onda**. El nivel 55 se acerca. El presupuesto de la realidad se está agotando.`,
     choices: [
-      { text: 'GOLPEAR EL MAZO', nextChapter: 13, nextBranch: 'IMAGINARY' },
-      { text: 'VIBRAR EN FRECUENCIA', nextChapter: 13, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'GOLPEAR EL MAZO', nextChapter: 13, nextBranch: 'IMAGINARY' }
     ],
     enigma: 'Nebulosa',
     artifacts: [
@@ -369,8 +359,7 @@ No hay arriba ni abajo. Silas flota en el centro de un vacío que ruge con el so
 
 Silas extiende la mano y toca la superficie de la esfera. Al contacto, su mente es invadida por un flujo de archivos corruptos, correos electrónicos que nunca se enviaron y susurros de científicos que murieron antes de que él naciera.`,
     choices: [
-      { text: 'BOTÓN DE ENTRELAZAMIENTO', nextChapter: 21 },
-      { text: 'BOTÓN DE RADIACIÓN', nextChapter: 13, nextBranch: 'IMAGINARY', triggerWormhole: true }
+      { text: 'BOTÓN DE ENTRELAZAMIENTO', nextChapter: 21 }
     ],
     enigma: 'Obsidiana',
     artifacts: [
@@ -394,8 +383,7 @@ Silas extiende la mano y toca la superficie de la esfera. Al contacto, su mente 
 
 Hawking te enseña a **vibrar en una frecuencia imaginaria** para que el Lector pierda tu rastro en la página.`,
     choices: [
-      { text: 'VOLVERSE INVISIBLE', nextChapter: 21, nextBranch: 'IMAGINARY' },
-      { text: 'SALTAR AL VACÍO', nextChapter: 21, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'VOLVERSE INVISIBLE', nextChapter: 21, nextBranch: 'IMAGINARY' }
     ],
     enigma: 'Fotones',
     artifacts: [
@@ -419,8 +407,7 @@ En medio del desierto, hay una **Torre de Refrigeración** de la Fundación Lani
 
 > *"Thorne tenía razón. El Agujero Negro del 13 era una centrifugadora de almas. Hemos filtrado la 'humanidad' del sujeto S-0 y lo que ha quedado es... pura radiación narrativa. Pero el problema no es Silas. El problema es el Lector."*`,
     choices: [
-      { text: 'ASUMIR LA DIVINIDAD', nextChapter: 34 },
-      { text: 'ENTREGAR EL RECUERDO', nextChapter: 21, nextBranch: 'IMAGINARY', triggerWormhole: true }
+      { text: 'ASUMIR LA DIVINIDAD', nextChapter: 34 }
     ],
     enigma: 'Ceniza',
     artifacts: [
@@ -444,8 +431,7 @@ En medio del desierto, hay una **Torre de Refrigeración** de la Fundación Lani
 
 El Agujero Negro te succiona hacia el centro del núcleo, donde la Rama Real y la Imaginaria chocan. Es un dolor hermoso. Es la destrucción de la dualidad.`,
     choices: [
-      { text: 'FUNDIRSE CON EL MONSTRUO', nextChapter: 34, nextBranch: 'IMAGINARY' },
-      { text: 'MIRAR AL CREADOR', nextChapter: 34, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'FUNDIRSE CON EL MONSTRUO', nextChapter: 34, nextBranch: 'IMAGINARY' }
     ],
     enigma: 'Dualidad',
     artifacts: [
@@ -466,8 +452,7 @@ El Agujero Negro te succiona hacia el centro del núcleo, donde la Rama Real y l
 
 Silas usa la llave de bronce para abrir una puerta que flota en el vacío. Al cruzarla, no entra en otra habitación de la Fundación, sino en **TU habitación**. O una réplica exacta de ella. Ve el dispositivo en el que estás leyendo, ve la silla en la que estás sentado, pero todo está hecho de una sustancia translúcida y vibrante.`,
     choices: [
-      { text: 'SALTAR AL CAPÍTULO 55', nextChapter: 55 },
-      { text: 'PULSAR EL BOTÓN ROJO', nextChapter: 34, nextBranch: 'IMAGINARY', triggerWormhole: true }
+      { text: 'SALTAR AL CAPÍTULO 55', nextChapter: 55 }
     ],
     enigma: 'Lector',
     artifacts: [
@@ -491,8 +476,7 @@ Jesús reaparece un momento, te pone la mano en el hombro y señala al Lector (a
 
 Las palabras empiezan a derretirse. Los nombres de los científicos se mezclan: Einstesla, Jesunheimer, Kennedying. La realidad es una sopa de letras caliente.`,
     choices: [
-      { text: 'ESCRIBIR EL NUEVO UNIVERSO', nextChapter: 55, nextBranch: 'IMAGINARY' },
-      { text: 'CERRAR EL LIBRO DESDE ADENTRO', nextChapter: 55, nextBranch: 'REAL', triggerWormhole: true }
+      { text: 'ESCRIBIR EL NUEVO UNIVERSO', nextChapter: 55, nextBranch: 'IMAGINARY' }
     ],
     enigma: 'Sopa de Letras',
     artifacts: [
