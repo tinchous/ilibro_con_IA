@@ -11,8 +11,10 @@ service cloud.firestore {
     //   - uid: string (required) - Firebase Auth UID
     //   - email: string (required, email format) - User email
     //   - displayName: string (optional) - User display name
+    //   - customDisplayName: string (optional) - User-defined display name
     //   - photoURL: string (optional, uri format) - User photo URL
     //   - characterType: string (enum: HUMAN, VARIABLE, DATA) - User character type
+    //   - defaultRecipient: string (optional, enum: Elon, Jesus, Einstein, Tesla, FutureScientist) - Preferred recipient
     //   - psiValue: number (optional) - Current entropy value
     //   - currentChapterKey: string (optional) - Current chapter ID
     //   - solvedEnigmasCount: int (optional) - Number of enigmas solved
@@ -70,6 +72,8 @@ service cloud.firestore {
              data.uid == request.auth.uid &&
              isValidEmail(data.email) &&
              (!('characterType' in data) || data.characterType in ['HUMAN', 'VARIABLE', 'DATA']) &&
+             (!('defaultRecipient' in data) || data.defaultRecipient in ['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist']) &&
+             (!('customDisplayName' in data) || (data.customDisplayName is string && data.customDisplayName.size() < 100)) &&
              (!('photoURL' in data) || isValidUrl(data.photoURL));
     }
 
