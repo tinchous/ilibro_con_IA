@@ -11,7 +11,7 @@
         "customDisplayName": { "type": "string", "description": "User-defined display name for the simulation." },
         "photoURL": { "type": "string", "format": "uri" },
         "characterType": { "type": "string", "enum": ["HUMAN", "VARIABLE", "DATA"] },
-        "defaultRecipient": { "type": "string", "enum": ["Elon", "Jesus", "Einstein", "Tesla", "FutureScientist"], "description": "Preferred recipient for quantum mail." },
+        "defaultRecipient": { "type": "string", "description": "Preferred recipient for quantum mail." },
         "psiValue": { "type": "number" },
         "currentChapterKey": { "type": "string" },
         "solvedEnigmasCount": { "type": "integer" },
@@ -25,7 +25,7 @@
       "type": "object",
       "properties": {
         "senderUid": { "type": "string" },
-        "recipient": { "type": "string", "enum": ["Elon", "Jesus", "Einstein", "Tesla", "FutureScientist"] },
+        "recipient": { "type": "string" },
         "subject": { "type": "string" },
         "body": { "type": "string" },
         "reply": { "type": "string" },

@@ -72,7 +72,7 @@ service cloud.firestore {
              data.uid == request.auth.uid &&
              isValidEmail(data.email) &&
              (!('characterType' in data) || data.characterType in ['HUMAN', 'VARIABLE', 'DATA']) &&
-             (!('defaultRecipient' in data) || data.defaultRecipient in ['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist']) &&
+             (!('defaultRecipient' in data) || data.defaultRecipient is string) &&
              (!('customDisplayName' in data) || (data.customDisplayName is string && data.customDisplayName.size() < 100)) &&
              (!('photoURL' in data) || isValidUrl(data.photoURL));
     }
@@ -80,7 +80,7 @@ service cloud.firestore {
     function isValidMail(data) {
       return data.keys().hasAll(['senderUid', 'recipient', 'subject', 'body', 'status', 'sentAt']) &&
              data.senderUid == request.auth.uid &&
-             data.recipient in ['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist'] &&
+             data.recipient is string &&
              data.status in ['SENT', 'DELIVERED', 'COLLAPSED'] &&
              data.subject is string && data.subject.size() > 0 && data.subject.size() < 200 &&
              data.body is string && data.body.size() > 0 && data.body.size() < 5000 &&

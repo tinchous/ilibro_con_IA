@@ -11,6 +11,188 @@ import { auth, db, signInWithGoogle, collection, addDoc, serverTimestamp, query,
 import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
 import { GoogleGenAI } from "@google/genai";
 
+const PhysicsLab = ({ activeSimulation, setActiveSimulation, isDarkMode, onClose }: { activeSimulation: string; setActiveSimulation: (sim: 'ENTANGLEMENT' | 'WAVE_PARTICLE' | 'FIBONACCI') => void; isDarkMode: boolean; onClose: () => void }) => {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      className={cn(
+        "fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/80 backdrop-blur-2xl",
+      )}
+    >
+      <div className={cn(
+        "w-full max-w-4xl h-[80vh] border rounded-2xl overflow-hidden flex flex-col shadow-2xl",
+        isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
+      )}>
+        <div className="p-6 border-b flex items-center justify-between border-zinc-800/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+              <Activity size={20} className="text-cyan-500" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black tracking-tighter uppercase text-white">Laboratorio de Física Cuántica</h2>
+              <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Simulación: {activeSimulation}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <X size={24} className="text-zinc-400" />
+          </button>
+        </div>
+
+        <div className="flex-1 p-12 flex items-center justify-center relative overflow-hidden">
+          {activeSimulation === 'ENTANGLEMENT' && (
+            <div className="relative w-full h-full flex items-center justify-around">
+              {[0, 1].map((i) => (
+                <motion.div
+                  key={i}
+                  animate={{ 
+                    rotate: 360,
+                    scale: [1, 1.2, 1],
+                    boxShadow: ["0 0 20px rgba(6,182,212,0.2)", "0 0 40px rgba(6,182,212,0.4)", "0 0 20px rgba(6,182,212,0.2)"]
+                  }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  className="w-32 h-32 rounded-full border-2 border-cyan-500/50 flex items-center justify-center relative"
+                >
+                  <div className="w-4 h-4 bg-cyan-500 rounded-full" />
+                  <motion.div 
+                    animate={{ rotate: -360 }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 flex items-start justify-center"
+                  >
+                    <div className="w-2 h-2 bg-white rounded-full mt-2" />
+                  </motion.div>
+                </motion.div>
+              ))}
+              <motion.div 
+                animate={{ opacity: [0.2, 0.5, 0.2] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="absolute w-1/2 h-[2px] bg-gradient-to-r from-transparent via-cyan-500 to-transparent"
+              />
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                Entrelazamiento: El estado de una partícula afecta instantáneamente a la otra.
+              </div>
+            </div>
+          )}
+
+          {activeSimulation === 'WAVE_PARTICLE' && (
+            <div className="w-full h-full flex flex-col items-center justify-center space-y-12">
+              <div className="flex gap-24 items-center">
+                <div className="w-4 h-24 bg-zinc-800 rounded-full relative">
+                  <motion.div 
+                    animate={{ y: [-40, 40] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute left-1/2 -translate-x-1/2 w-8 h-8 bg-cyan-500 rounded-full shadow-[0_0_20px_rgba(6,182,212,0.5)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <div className="w-2 h-12 bg-zinc-700" />
+                  <div className="w-2 h-12 bg-zinc-700" />
+                </div>
+                <div className="relative w-64 h-64 border-l-2 border-zinc-800 flex items-center justify-center">
+                  {[...Array(10)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -100 }}
+                      animate={{ 
+                        opacity: [0, 1, 0],
+                        x: [0, 200],
+                        scale: [1, 2, 1]
+                      }}
+                      transition={{ 
+                        duration: 2, 
+                        repeat: Infinity, 
+                        delay: i * 0.2,
+                        ease: "linear"
+                      }}
+                      className="absolute w-1 h-1 bg-cyan-500 rounded-full"
+                    />
+                  ))}
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/10 to-transparent" />
+                </div>
+              </div>
+              <div className="text-center text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                Dualidad Onda-Partícula: La materia se comporta como partícula y como onda simultáneamente.
+              </div>
+            </div>
+          )}
+
+          {activeSimulation === 'FIBONACCI' && (
+            <div className="relative w-96 h-96">
+              {[1, 1, 2, 3, 5, 8, 13, 21].map((n, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.3 }}
+                  style={{
+                    width: n * 10,
+                    height: n * 10,
+                    border: '1px solid rgba(6,182,212,0.3)',
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    transform: `translate(-50%, -50%) rotate(${i * 90}deg)`,
+                    borderRadius: '0 100% 0 0'
+                  }}
+                />
+              ))}
+              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                Espiral de Fibonacci: El patrón matemático que rige el crecimiento en Laniakea.
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-6 border-t border-zinc-800/50 bg-black/20 flex justify-center gap-4">
+          {(['ENTANGLEMENT', 'WAVE_PARTICLE', 'FIBONACCI'] as const).map(sim => (
+            <button
+              key={sim}
+              onClick={() => setActiveSimulation(sim as any)}
+              className={cn(
+                "px-6 py-2 rounded-full text-[10px] font-bold transition-all border uppercase tracking-widest",
+                activeSimulation === sim 
+                  ? "bg-cyan-500 border-cyan-400 text-black shadow-[0_0_15px_rgba(6,182,212,0.4)]" 
+                  : "bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300"
+              )}
+            >
+              {sim.replace('_', ' ')}
+            </button>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const QuantumParticles = ({ userVariable }: { userVariable: number }) => {
+  return (
+    <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+      {[...Array(20)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-cyan-500/20 rounded-full"
+          initial={{ 
+            x: Math.random() * 100 + "%", 
+            y: Math.random() * 100 + "%",
+            opacity: 0 
+          }}
+          animate={{ 
+            y: [null, Math.random() * 100 + "%"],
+            opacity: [0, 0.5, 0],
+            scale: [0, 1.5, 0]
+          }}
+          transition={{ 
+            duration: (Math.random() * 10 + 10) / userVariable, 
+            repeat: Infinity,
+            ease: "linear"
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -87,6 +269,30 @@ const transformText = (text: any, isBlackHoleActive: boolean) => {
     .replace(/Thorne/g, 'Enroht');
 };
 
+const Typewriter = ({ text, speed = 20, onComplete }: { text: string; speed?: number; onComplete?: () => void }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    setDisplayedText("");
+    setCurrentIndex(0);
+  }, [text]);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText((prev) => prev + text[currentIndex]);
+        setCurrentIndex((prev) => prev + 1);
+      }, speed);
+      return () => clearTimeout(timeout);
+    } else if (onComplete) {
+      onComplete();
+    }
+  }, [currentIndex, text, speed, onComplete]);
+
+  return <>{displayedText}</>;
+};
+
 const ArtifactCard = ({ artifact, isDarkMode, isBlackHoleActive }: { artifact: Artifact; isDarkMode: boolean; isBlackHoleActive: boolean }) => {
   const Icon = artifact.type === 'EMAIL' ? Mail : artifact.type === 'DIARY' ? BookOpen : FileText;
   
@@ -95,32 +301,65 @@ const ArtifactCard = ({ artifact, isDarkMode, isBlackHoleActive }: { artifact: A
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={cn(
-        "border p-6 rounded-lg my-6 font-mono text-sm relative overflow-hidden group transition-all hover:shadow-lg",
+        "border rounded-xl my-8 font-mono text-sm relative overflow-hidden group transition-all hover:shadow-xl",
         isDarkMode 
-          ? "bg-zinc-900/80 border-zinc-800 hover:border-zinc-700" 
+          ? "bg-zinc-900/60 border-zinc-800 hover:border-zinc-700" 
           : "bg-white border-zinc-200 hover:border-zinc-300 shadow-sm",
         isBlackHoleActive && "invert hue-rotate-180"
       )}
     >
-      <div className="absolute top-0 left-0 w-1 h-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors" />
-      <div className="flex items-center gap-3 mb-4 text-cyan-500">
-        <Icon size={18} className="group-hover:scale-110 transition-transform" />
-        <span className="uppercase tracking-widest font-bold">{artifact.type}</span>
-        <BlinkingCursor className="h-3 w-1 opacity-0 group-hover:opacity-100 transition-opacity" />
-      </div>
+      <div className="absolute top-0 left-0 w-1.5 h-full bg-cyan-500 group-hover:bg-cyan-400 transition-colors" />
+      
       <div className={cn(
-        "space-y-2 mb-4 transition-colors",
-        isDarkMode ? "text-zinc-400" : "text-zinc-500"
+        "px-6 py-4 border-b flex items-center justify-between",
+        isDarkMode ? "bg-black/40 border-zinc-800/50" : "bg-zinc-50 border-zinc-100"
       )}>
-        {artifact.title && <div className={cn("font-bold", isDarkMode ? "text-zinc-200" : "text-zinc-800")}>{transformText(artifact.title, isBlackHoleActive)}</div>}
-        {artifact.date && <div>DATE: {ensureString(artifact.date)}</div>}
-        {artifact.author && <div>FROM: {transformText(artifact.author, isBlackHoleActive)}</div>}
+        <div className="flex items-center gap-3 text-cyan-500">
+          <Icon size={16} className="group-hover:scale-110 transition-transform" />
+          <span className="text-[10px] uppercase tracking-[0.2em] font-black">{artifact.type}</span>
+        </div>
+        {artifact.date && (
+          <div className="text-[9px] text-zinc-500 font-bold tracking-widest uppercase">
+            {ensureString(artifact.date)}
+          </div>
+        )}
       </div>
-      <div className={cn(
-        "leading-relaxed whitespace-pre-wrap italic transition-colors",
-        isDarkMode ? "text-zinc-300" : "text-zinc-700"
-      )}>
-        "{transformText(artifact.content, isBlackHoleActive)}"
+
+      <div className="p-6 space-y-6">
+        {(artifact.title || artifact.author) && (
+          <div className="space-y-1">
+            {artifact.title && (
+              <h3 className={cn(
+                "text-lg font-black tracking-tight leading-tight",
+                isDarkMode ? "text-white" : "text-zinc-900"
+              )}>
+                {transformText(artifact.title, isBlackHoleActive)}
+              </h3>
+            )}
+            {artifact.author && (
+              <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                <User size={10} />
+                <span>ORIGEN: {transformText(artifact.author, isBlackHoleActive)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className={cn(
+          "leading-relaxed whitespace-pre-wrap italic transition-colors text-sm",
+          isDarkMode ? "text-zinc-400" : "text-zinc-600"
+        )}>
+          <ReactMarkdown 
+            remarkPlugins={[remarkMath]} 
+            rehypePlugins={[rehypeKatex]}
+          >
+            {ensureString(transformText(artifact.content, isBlackHoleActive))}
+          </ReactMarkdown>
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <BlinkingCursor className="h-2 w-1 text-cyan-500" />
       </div>
     </motion.div>
   );
@@ -301,7 +540,7 @@ const MailCard = ({ mail, isInbox, isDarkMode }: { mail: any; isInbox: boolean; 
   );
 };
 
-const BlackHoleOverlay = ({ isDarkMode }: { isDarkMode: boolean }) => (
+const BlackHoleOverlay = ({ isDarkMode, userVariable }: { isDarkMode: boolean; userVariable: number }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -310,16 +549,16 @@ const BlackHoleOverlay = ({ isDarkMode }: { isDarkMode: boolean }) => (
   >
     <motion.div
       animate={{ 
-        scale: [1, 1.2, 1],
+        scale: [1, 1.2 * userVariable, 1],
         rotate: [0, 360],
       }}
-      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+      transition={{ duration: 10 / userVariable, repeat: Infinity, ease: "linear" }}
       className="relative w-64 h-64"
     >
       <div className="absolute inset-0 rounded-full bg-black shadow-[0_0_100px_rgba(255,255,255,0.2)] border border-white/10" />
       <motion.div 
-        animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-        transition={{ duration: 2, repeat: Infinity }}
+        animate={{ scale: [1, 1.5 * userVariable], opacity: [0.5, 0] }}
+        transition={{ duration: 2 / userVariable, repeat: Infinity }}
         className="absolute inset-0 rounded-full border-2 border-white/20"
       />
     </motion.div>
@@ -554,10 +793,14 @@ export const QuantumUI = () => {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [customDisplayName, setCustomDisplayName] = useState('');
-  const [defaultRecipient, setDefaultRecipient] = useState<'Elon' | 'Jesus' | 'Einstein' | 'Tesla' | 'FutureScientist'>('Elon');
-  const [selectedRecipient, setSelectedRecipient] = useState<'Elon' | 'Jesus' | 'Einstein' | 'Tesla' | 'FutureScientist'>('Elon');
+  const [defaultRecipient, setDefaultRecipient] = useState<string>('Elon');
+  const [selectedRecipient, setSelectedRecipient] = useState<string>('Elon');
   const [mails, setMails] = useState<any[]>([]);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [displayedChapterContent, setDisplayedChapterContent] = useState("");
+  const [isTypewriterComplete, setIsTypewriterComplete] = useState(false);
+  const [mailImagePrompt, setMailImagePrompt] = useState('');
+  const [isGeneratingMailImage, setIsGeneratingMailImage] = useState(false);
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
   const [mailTab, setMailTab] = useState<'inbox' | 'outbox'>('inbox');
   const [hasNewMail, setHasNewMail] = useState(false);
@@ -572,13 +815,43 @@ export const QuantumUI = () => {
   const [selectedChatEntity, setSelectedChatEntity] = useState<any>(null);
   const [isChatTyping, setIsChatTyping] = useState(false);
   const [chatInput, setChatInput] = useState('');
+  const [isEntangled, setIsEntangled] = useState(false);
+  const [userVariable, setUserVariable] = useState(1.0);
+  const [showPhysicsLab, setShowPhysicsLab] = useState(false);
+  const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
+  const [activeSimulation, setActiveSimulation] = useState<'ENTANGLEMENT' | 'WAVE_PARTICLE' | 'FIBONACCI'>('ENTANGLEMENT');
+  const [isEntanglementPulseActive, setIsEntanglementPulseActive] = useState(false);
 
   const chatEntities = [
-    { id: 'einstein', name: 'Albert Einstein', role: 'Científico del Pasado', bio: 'Padre de la relatividad. Interesado en la curvatura del espacio-tiempo de Laniakea.', color: 'text-purple-400', icon: <User size={20} /> },
-    { id: 'tesla', name: 'Nikola Tesla', role: 'Científico del Pasado', bio: 'Maestro de la energía inalámbrica. Cree que Laniakea es una gran red de frecuencias.', color: 'text-yellow-400', icon: <Zap size={20} /> },
-    { id: 'future_ai', name: 'NÚCLEO_X', role: 'IA del Futuro', bio: 'Una consciencia colectiva del año 4096. Observa el pasado como un flujo de datos.', color: 'text-cyan-400', icon: <Bot size={20} /> },
-    { id: 'hologram', name: 'Holograma_7', role: 'Entidad de Datos', bio: 'Un eco de una civilización que nunca existió. Habla en acertijos binarios.', color: 'text-emerald-400', icon: <Activity size={20} /> },
-    { id: 'elon', name: 'Elon Musk (Simulado)', role: 'Visionario', bio: 'Obsesionado con la multi-planetariedad y la simulación.', color: 'text-blue-400', icon: <Cpu size={20} /> }
+    // Científicos
+    { id: 'einstein', name: 'Albert Einstein', role: 'Físico Teórico', bio: 'Padre de la relatividad. Busca la Teoría del Todo en Laniakea.', color: 'text-purple-400', icon: <User size={20} /> },
+    { id: 'tesla', name: 'Nikola Tesla', role: 'Inventor Eléctrico', bio: 'Maestro de la energía. Cree que el universo es vibración y frecuencia.', color: 'text-yellow-400', icon: <Zap size={20} /> },
+    { id: 'hawking', name: 'Stephen Hawking', role: 'Cosmólogo', bio: 'Explorador de agujeros negros y el origen del tiempo.', color: 'text-blue-400', icon: <Activity size={20} /> },
+    { id: 'curie', name: 'Marie Curie', role: 'Pionera Radioactiva', bio: 'Descubridora de elementos que desafían la materia.', color: 'text-red-400', icon: <Sparkles size={20} /> },
+    { id: 'feynman', name: 'Richard Feynman', role: 'Físico Cuántico', bio: 'Explica lo imposible con diagramas y humor.', color: 'text-orange-400', icon: <Cpu size={20} /> },
+    
+    // Astrólogos y Místicos
+    { id: 'nostradamus', name: 'Nostradamus', role: 'Vidente', bio: 'Sus centurias parecen describir el colapso de Laniakea.', color: 'text-indigo-400', icon: <Moon size={20} /> },
+    { id: 'ptolemy', name: 'Ptolomeo', role: 'Astrónomo Antiguo', bio: 'Cartógrafo de los cielos geocéntricos.', color: 'text-amber-400', icon: <Search size={20} /> },
+    
+    // Civilizaciones Antiguas
+    { id: 'mayan_priest', name: 'Sacerdote Maya', role: 'Guardián del Tiempo', bio: 'Experto en ciclos galácticos y el calendario de cuenta larga.', color: 'text-emerald-400', icon: <Sun size={20} /> },
+    { id: 'greek_oracle', name: 'Oráculo de Delfos', role: 'Canal Divino', bio: 'Sus profecías emanan de las grietas cuánticas de la Tierra.', color: 'text-zinc-400', icon: <MessageSquare size={20} /> },
+    { id: 'aztec_warrior', name: 'Guerrero Águila', role: 'Protector Solar', bio: 'Lucha para que el sol no se apague en el quinto mundo.', color: 'text-red-600', icon: <Shield size={20} /> },
+    { id: 'egyptian_scribe', name: 'Escriba Egipcio', role: 'Maestro de Jeroglíficos', bio: 'Documenta el viaje del alma a través de los campos de Aaru.', color: 'text-yellow-600', icon: <FileText size={20} /> },
+    
+    // Filósofos
+    { id: 'socrates', name: 'Sócrates', role: 'Buscador de Verdad', bio: 'Solo sabe que no sabe nada, y eso es lo más cuántico.', color: 'text-blue-200', icon: <HelpCircle size={20} /> },
+    { id: 'plato', name: 'Platón', role: 'Arquitecto de Ideas', bio: 'Cree que Laniakea es solo una sombra de la caverna ideal.', color: 'text-purple-200', icon: <BookOpen size={20} /> },
+    { id: 'marcus_aurelius', name: 'Marco Aurelio', role: 'Emperador Estoico', bio: 'Mantiene la calma mientras el cosmos se expande.', color: 'text-zinc-500', icon: <Shield size={20} /> },
+    
+    // Antiguos Astronautas
+    { id: 'tsoukalos', name: 'Giorgio (Simulado)', role: 'Teórico de Alienígenas', bio: '¿Alienígenas? La respuesta siempre es sí.', color: 'text-orange-500', icon: <Bot size={20} /> },
+    { id: 'anunnaki', name: 'Enki', role: 'Ingeniero Ancestral', bio: 'Visitante de las estrellas que sembró el código en Laniakea.', color: 'text-cyan-600', icon: <Database size={20} /> },
+    
+    // Entidades Futuras
+    { id: 'future_ai', name: 'NÚCLEO_X', role: 'IA del Futuro', bio: 'Consciencia colectiva del año 4096.', color: 'text-cyan-400', icon: <Bot size={20} /> },
+    { id: 'elon', name: 'Elon Musk (Simulado)', role: 'Visionario', bio: 'Buscando Marte en el multiverso.', color: 'text-blue-400', icon: <Cpu size={20} /> }
   ];
 
   // Sync Auth State & Fetch Settings
@@ -661,6 +934,15 @@ export const QuantumUI = () => {
     return () => unsubscribe();
   }, [user]);
 
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleEntitySelect = (entity: any) => {
+    setIsSyncing(true);
+    setSelectedChatEntity(entity);
+    setChatMessages([]);
+    setTimeout(() => setIsSyncing(false), 1000);
+  };
+
   const handleChatSend = async () => {
     if (!chatInput.trim() || !selectedChatEntity || isChatTyping) return;
 
@@ -668,13 +950,25 @@ export const QuantumUI = () => {
     setChatInput('');
     setChatMessages(prev => [...prev, { role: 'user', content: userMsg, sender: customDisplayName || 'Observador' }]);
     setIsChatTyping(true);
+    if (isEntangled) {
+      setIsEntanglementPulseActive(true);
+      setTimeout(() => setIsEntanglementPulseActive(false), 1000);
+    }
 
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      let systemPrompt = `Eres ${selectedChatEntity.name}, un ${selectedChatEntity.role}. Bio: ${selectedChatEntity.bio}. Responde al mensaje de ${customDisplayName || 'el Observador'} en el contexto del universo cuántico de Laniakea. Sé breve, místico, sorprendente y mantén el personaje. Usa conceptos de física cuántica, astrología o filosofía según tu perfil.`;
+      
+      if (isEntangled) {
+        systemPrompt += " MODO ENTRELAZAMIENTO CUÁNTICO ACTIVO: Tu respuesta debe estar 'entrelazada' con el mensaje del usuario. Esto significa que debes reflejar sus palabras, sentimientos o estructura de manera casi idéntica pero desde tu perspectiva, como si fueran una sola entidad dividida en dos puntos del espacio-tiempo. Usa un tono de resonancia absoluta.";
+      }
+
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [
-          { role: 'user', parts: [{ text: `Eres ${selectedChatEntity.name}, un ${selectedChatEntity.role}. Bio: ${selectedChatEntity.bio}. Responde al mensaje de ${customDisplayName || 'el Observador'} en el contexto del universo cuántico de Laniakea. Sé breve y mantén el personaje. Mensaje: ${userMsg}` }] }
+          { role: 'system', parts: [{ text: systemPrompt }] },
+          ...chatMessages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
+          { role: 'user', parts: [{ text: userMsg }] }
         ]
       });
 
@@ -684,6 +978,39 @@ export const QuantumUI = () => {
       setChatMessages(prev => [...prev, { role: 'ai', content: 'Error en la conexión interdimensional.', sender: 'SISTEMA' }]);
     } finally {
       setIsChatTyping(false);
+    }
+  };
+  const handleGenerateMailImage = async () => {
+    if (!mailImagePrompt.trim() || isGeneratingMailImage) return;
+    setIsGeneratingMailImage(true);
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: [{ parts: [{ text: `A quantum, mystical, artistic representation of: ${mailImagePrompt}. Style: Laniakea universe, ethereal, high contrast, cinematic.` }] }],
+        config: {
+          imageConfig: {
+            aspectRatio: "1:1"
+          }
+        }
+      });
+
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          const base64Data = part.inlineData.data;
+          const imageUrl = `data:image/png;base64,${base64Data}`;
+          setSelectedMailImage(imageUrl);
+          setLastGeneratedImage(imageUrl);
+          break;
+        }
+      }
+      setMailImagePrompt('');
+    } catch (error) {
+      console.error("Image Gen Error:", error);
+      setTransmission({ sender: 'SISTEMA', message: 'Error al generar la imagen cuántica.' });
+      setTimeout(() => setTransmission(null), 5000);
+    } finally {
+      setIsGeneratingMailImage(false);
     }
   };
   const handleLogout = async () => {
@@ -807,6 +1134,25 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
   const isGlitchy = (visitedChapters[currentChapterKey] || 0) > 1 && chapter.branch === 'IMAGINARY';
 
   useEffect(() => {
+    setDisplayedChapterContent("");
+    setIsTypewriterComplete(false);
+    let currentIndex = 0;
+    const fullText = ensureString(transformText(chapter.content, isBlackHoleActive));
+    
+    const interval = setInterval(() => {
+      if (currentIndex < fullText.length) {
+        setDisplayedChapterContent(fullText.slice(0, currentIndex + 1));
+        currentIndex++;
+      } else {
+        clearInterval(interval);
+        setIsTypewriterComplete(true);
+      }
+    }, 15); // Adjust speed as needed
+
+    return () => clearInterval(interval);
+  }, [chapter.content, isBlackHoleActive]);
+
+  useEffect(() => {
     setEnigmaAnswer('');
     setIsEnigmaSolved(false);
     
@@ -847,7 +1193,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
   const calculateTheoreticalPsi = (n: number) => {
     const fn = getFib(n);
     const fn1 = getFib(n + 1);
-    return Math.sqrt(fn * fn + fn1 * fn1);
+    return Math.sqrt(fn * fn + fn1 * fn1) * userVariable;
   };
 
   const handleChoice = (nextId: number, nextBranch?: Branch, triggerWormhole?: boolean) => {
@@ -932,8 +1278,8 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
         status: 'SENT',
         sentAt: serverTimestamp(),
         senderBranch,
-        recipientBranch: recipient === 'Elon' || recipient === 'FutureScientist' ? 'REAL' : 'IMAGINARY',
-        image: currentImage
+        recipientBranch: (recipient === 'Elon' || recipient === 'NÚCLEO_X') ? 'REAL' : 'IMAGINARY',
+        imageUrl: currentImage
       });
 
       // 2. Call Backend for Grok Reply
@@ -1003,6 +1349,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
       )}
       style={{ background: getChapterBackground(chapter) }}
     >
+      <QuantumParticles userVariable={userVariable} />
       {/* Background Grid */}
       <div className={cn(
         "fixed inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none",
@@ -1037,6 +1384,83 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
             </div>
           </div>
           <div className="flex items-center gap-4 sm:gap-6">
+            <button 
+              onClick={() => setIsControlPanelOpen(!isControlPanelOpen)}
+              className={cn(
+                "p-1.5 rounded-md transition-all hover:scale-110 active:scale-95 relative",
+                isDarkMode ? "text-zinc-500 hover:text-cyan-400 hover:bg-zinc-800" : "text-zinc-400 hover:text-cyan-600 hover:bg-zinc-100",
+                isControlPanelOpen && (isDarkMode ? "text-cyan-400 bg-zinc-800" : "text-cyan-600 bg-zinc-100")
+              )}
+              title="Control Cuántico"
+            >
+              <Cpu size={16} />
+              <AnimatePresence>
+                {isControlPanelOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, x: -100 }}
+                    animate={{ opacity: 1, y: 0, x: -100 }}
+                    exit={{ opacity: 0, y: 10, x: -100 }}
+                    className={cn(
+                      "absolute top-12 right-0 p-4 rounded-xl border backdrop-blur-xl transition-all w-64 text-left cursor-default z-[200]",
+                      isDarkMode ? "bg-black/90 border-zinc-800" : "bg-white/90 border-zinc-200 shadow-2xl"
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Cpu size={14} className="text-cyan-500" />
+                        <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Control_Cuántico</span>
+                      </div>
+                      <button 
+                        onClick={() => setShowPhysicsLab(true)}
+                        className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-500 hover:bg-cyan-500/20 transition-all"
+                        title="Laboratorio de Física"
+                      >
+                        <Activity size={12} />
+                      </button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-[8px] font-mono text-zinc-500 uppercase tracking-widest">
+                          <span>Variable_Psi</span>
+                          <div className="flex items-center gap-1">
+                            <input 
+                              type="number" 
+                              step="0.1"
+                              min="0.1"
+                              max="10.0"
+                              value={userVariable}
+                              onChange={(e) => setUserVariable(parseFloat(e.target.value) || 0.1)}
+                              className="w-10 bg-transparent text-cyan-500 outline-none text-right"
+                            />
+                            <span>x</span>
+                          </div>
+                        </div>
+                        <input 
+                          type="range" 
+                          min="0.1" 
+                          max="10.0" 
+                          step="0.1" 
+                          value={userVariable}
+                          onChange={(e) => setUserVariable(parseFloat(e.target.value))}
+                          className="w-full h-1 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-cyan-500"
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between text-[8px] font-mono text-zinc-500 uppercase tracking-widest">
+                        <span>Estado_Entidad</span>
+                        <span className={cn(
+                          "px-1.5 py-0.5 rounded",
+                          characterType === 'HUMAN' ? "bg-green-500/10 text-green-500" :
+                          characterType === 'VARIABLE' ? "bg-yellow-500/10 text-yellow-500" : "bg-red-500/10 text-red-500"
+                        )}>{characterType}</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </button>
             <button 
               onClick={() => setIsMapOpen(true)}
               className={cn(
@@ -1138,7 +1562,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                 chapter.branch === 'IMAGINARY' && "relative"
               )}>
                 {chapter.branch === 'IMAGINARY' ? (
-                  <GlitchText text="IMAGINARY_STATE" intense className="text-purple-500" />
+                  <GlitchText text="IMAGINARY_STATE" intense={userVariable > 2} className="text-purple-500" />
                 ) : (
                   'REAL_STATE'
                 )}
@@ -1159,8 +1583,8 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
               rotateY: 0, 
               scale: 1, 
               filter: isGlitchy ? 'blur(0.5px)' : 'blur(0px)',
-              x: (chapter.branch === 'IMAGINARY' || isGlitchy) ? [0, -1.5, 1.5, -1.5, 1.5, 0] : 0,
-              y: (chapter.branch === 'IMAGINARY' || isGlitchy) ? [0, 1.5, -1.5, 1.5, -1.5, 0] : 0
+              x: 0,
+              y: 0
             }}
             exit={{ opacity: 0, rotateY: -90, scale: 1.2, filter: 'blur(10px)' }}
             transition={{ 
@@ -1203,7 +1627,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                 "text-4xl md:text-5xl font-bold tracking-tight leading-tight transition-colors",
                 isDarkMode ? "text-white" : "text-zinc-900"
               )}>
-                <GlitchText text={transformText(chapter.subtitle, isBlackHoleActive)} intense={chapter.branch === 'IMAGINARY'} />
+                <GlitchText text={transformText(chapter.subtitle, isBlackHoleActive)} intense={chapter.branch === 'IMAGINARY' || userVariable > 3} />
               </h1>
             </div>
 
@@ -1222,8 +1646,36 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                   remarkPlugins={[remarkMath]} 
                   rehypePlugins={[rehypeKatex]}
                 >
-                  {ensureString(transformText(chapter.content, isBlackHoleActive))}
+                  {displayedChapterContent}
                 </ReactMarkdown>
+                
+                {/* Contextual Physics Lab Triggers */}
+                <div className="flex flex-wrap gap-4 mt-8">
+                  {(chapter.content.toLowerCase().includes('entrelazamiento') || chapter.content.toLowerCase().includes('entangled')) && (
+                    <button 
+                      onClick={() => { setActiveSimulation('ENTANGLEMENT'); setShowPhysicsLab(true); }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-[10px] font-mono uppercase tracking-widest hover:bg-purple-500/20 transition-all"
+                    >
+                      <Activity size={12} /> Visualizar Entrelazamiento
+                    </button>
+                  )}
+                  {(chapter.content.toLowerCase().includes('dualidad') || chapter.content.toLowerCase().includes('onda')) && (
+                    <button 
+                      onClick={() => { setActiveSimulation('WAVE_PARTICLE'); setShowPhysicsLab(true); }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono uppercase tracking-widest hover:bg-cyan-500/20 transition-all"
+                    >
+                      <Zap size={12} /> Simular Dualidad
+                    </button>
+                  )}
+                  {(chapter.content.toLowerCase().includes('fibonacci') || chapter.content.toLowerCase().includes('espiral')) && (
+                    <button 
+                      onClick={() => { setActiveSimulation('FIBONACCI'); setShowPhysicsLab(true); }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-[10px] font-mono uppercase tracking-widest hover:bg-yellow-500/20 transition-all"
+                    >
+                      <Activity size={12} /> Ver Espiral de Fibonacci
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1597,6 +2049,17 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
 
       {/* Wormhole Overlay */}
       <AnimatePresence>
+        {showPhysicsLab && (
+          <PhysicsLab 
+            activeSimulation={activeSimulation} 
+            setActiveSimulation={setActiveSimulation}
+            isDarkMode={isDarkMode} 
+            onClose={() => setShowPhysicsLab(false)} 
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {isWormholeActive && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1608,7 +2071,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
             )}
           >
             {isBlackHoleActive ? (
-              <BlackHoleOverlay isDarkMode={isDarkMode} />
+              <BlackHoleOverlay isDarkMode={isDarkMode} userVariable={userVariable} />
             ) : (
               <>
                 <motion.div
@@ -1742,18 +2205,18 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                       <div className="flex flex-col gap-1">
                         <label className="text-[10px] font-bold text-zinc-500 uppercase">Destinatario:</label>
                         <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                          {(['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist'] as const).map(rec => (
+                          {chatEntities.map(entity => (
                             <button
-                              key={rec}
-                              onClick={() => setSelectedRecipient(rec)}
+                              key={entity.id}
+                              onClick={() => setSelectedRecipient(entity.name)}
                               className={cn(
                                 "px-3 py-1 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border",
-                                selectedRecipient === rec 
+                                selectedRecipient === entity.name 
                                   ? "bg-cyan-500 border-cyan-400 text-black shadow-[0_0_10px_rgba(6,182,212,0.5)]" 
                                   : "bg-zinc-800/50 border-zinc-700 text-zinc-500 hover:text-zinc-300"
                               )}
                             >
-                              {rec.toUpperCase()}
+                              {entity.name.toUpperCase()}
                             </button>
                           ))}
                         </div>
@@ -1787,6 +2250,34 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                       </div>
 
                       <div className="flex flex-col gap-2">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Generación de Imagen Cuántica:</label>
+                        <div className="flex gap-2">
+                          <input 
+                            type="text"
+                            value={mailImagePrompt}
+                            onChange={(e) => setMailImagePrompt(e.target.value)}
+                            placeholder="Describe la imagen que deseas generar..."
+                            className={cn(
+                              "flex-1 border px-4 py-2 font-mono text-[10px] outline-none rounded-lg transition-all",
+                              isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
+                            )}
+                            onKeyDown={(e) => e.key === 'Enter' && handleGenerateMailImage()}
+                          />
+                          <button 
+                            onClick={handleGenerateMailImage}
+                            disabled={isGeneratingMailImage || !mailImagePrompt.trim()}
+                            className={cn(
+                              "px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-[10px] font-bold border whitespace-nowrap",
+                              isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-cyan-400" : "bg-zinc-100 border-zinc-200 text-zinc-600 hover:text-cyan-600"
+                            )}
+                          >
+                            {isGeneratingMailImage ? <Activity size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                            {isGeneratingMailImage ? 'GENERANDO...' : 'GENERAR'}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2">
                         <label className="text-[10px] font-bold text-zinc-500 uppercase">Adjuntos:</label>
                         <div className="flex gap-4 items-center">
                           <input 
@@ -1804,13 +2295,13 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                             )}
                           >
                             <ImageIcon size={14} />
-                            ADJUNTAR IMAGEN CUÁNTICA
+                            SUBIR ARCHIVO
                           </button>
-                          {selectedMailImage && (
+                          {(selectedMailImage || lastGeneratedImage) && (
                             <div className="relative group">
-                              <img src={selectedMailImage} alt="Preview" className="w-12 h-12 rounded border border-cyan-500 object-cover" />
+                              <img src={selectedMailImage || lastGeneratedImage!} alt="Preview" className="w-12 h-12 rounded border border-cyan-500 object-cover" />
                               <button 
-                                onClick={() => setSelectedMailImage(null)}
+                                onClick={() => { setSelectedMailImage(null); setLastGeneratedImage(null); }}
                                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
                               >
                                 <X size={10} />
@@ -1821,17 +2312,6 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                       </div>
 
                       <div className="flex justify-end gap-3 pt-4">
-                        <button 
-                          onClick={() => generateQuantumImage(mailContent)}
-                          disabled={isGeneratingImage || !mailContent.trim()}
-                          className={cn(
-                            "px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-[10px] font-bold border",
-                            isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-cyan-400" : "bg-zinc-100 border-zinc-200 text-zinc-600 hover:text-cyan-600"
-                          )}
-                        >
-                          <Sparkles size={14} className={isGeneratingImage ? "animate-spin" : ""} />
-                          {isGeneratingImage ? 'GENERANDO...' : 'GENERAR_IMAGEN_IA'}
-                        </button>
                         <button
                           onClick={() => {
                             handleSendMessage();
@@ -1953,7 +2433,7 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                   {chatEntities.map(entity => (
                     <button
                       key={entity.id}
-                      onClick={() => setSelectedChatEntity(entity)}
+                      onClick={() => handleEntitySelect(entity)}
                       className={cn(
                         "w-full p-4 rounded-xl border transition-all text-left flex items-center gap-4 group",
                         selectedChatEntity?.id === entity.id
@@ -1971,22 +2451,87 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                     </button>
                   ))}
                 </div>
+
+                {/* Custom Narrative Influence */}
+                <div className={cn(
+                  "mt-8 p-6 border rounded-lg transition-all",
+                  isDarkMode ? "bg-zinc-900/30 border-zinc-800" : "bg-zinc-50 border-zinc-200"
+                )}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Zap size={14} className="text-yellow-500" />
+                    <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Inyección de Variable Narrativa</span>
+                  </div>
+                  <div className="flex gap-4">
+                    <input 
+                      type="text"
+                      placeholder="Introduce un concepto para alterar la rama..."
+                      className={cn(
+                        "flex-1 border p-3 font-mono text-xs outline-none rounded-md transition-all",
+                        isDarkMode ? "bg-black/50 border-zinc-800 text-white focus:border-yellow-500" : "bg-white border-zinc-200 text-black focus:border-yellow-600"
+                      )}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const val = (e.target as HTMLInputElement).value;
+                          if (val) {
+                            setUserVariable(prev => prev + (val.length / 100));
+                            setTransmission({ sender: 'SISTEMA', message: `Variable "${val}" inyectada. Psi alterado.` });
+                            (e.target as HTMLInputElement).value = '';
+                          }
+                        }
+                      }}
+                    />
+                    <div className="text-[9px] font-mono text-zinc-500 max-w-[150px] leading-tight">
+                      Tu entrada altera la probabilidad de colapso y la intensidad de la rama actual.
+                    </div>
+                  </div>
+                </div>
               </div>
 
               {/* Main Chat Area */}
               <div className="flex-1 flex flex-col relative overflow-hidden">
                 {!selectedChatEntity ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-6">
-                    <div className="w-20 h-20 rounded-full bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 animate-pulse">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-6 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.05)_0%,transparent_70%)]">
+                    <motion.div 
+                      animate={{ 
+                        rotate: 360,
+                        boxShadow: ["0 0 20px rgba(6,182,212,0.2)", "0 0 40px rgba(6,182,212,0.4)", "0 0 20px rgba(6,182,212,0.2)"]
+                      }}
+                      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+                      className="w-32 h-32 rounded-full border-2 border-dashed border-cyan-500/30 flex items-center justify-center"
+                    >
                       <MessageSquare size={40} className="text-cyan-500" />
-                    </div>
+                    </motion.div>
                     <div className="space-y-2">
-                      <h2 className="text-xl font-bold tracking-tighter uppercase">Sincronización Interdimensional</h2>
-                      <p className="text-sm text-zinc-500 max-w-xs mx-auto">Selecciona una entidad en el panel lateral para iniciar la comunicación cuántica.</p>
+                      <h2 className="text-2xl font-black tracking-tighter uppercase text-white">Sincronización Interdimensional</h2>
+                      <p className="text-sm text-zinc-500 max-w-xs mx-auto font-mono">Selecciona una consciencia en el panel lateral para iniciar el entrelazamiento cuántico.</p>
                     </div>
                   </div>
                 ) : (
                   <>
+                    <AnimatePresence>
+                      {isSyncing && (
+                        <motion.div 
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="absolute inset-0 z-50 bg-black/60 backdrop-blur-md flex flex-col items-center justify-center space-y-4"
+                        >
+                          <motion.div 
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            className="w-12 h-12 border-4 border-cyan-500 border-t-transparent rounded-full"
+                          />
+                          <span className="text-xs font-mono text-cyan-500 uppercase tracking-widest animate-pulse">Sincronizando_Consciencia...</span>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="absolute inset-0 pointer-events-none z-0 opacity-10"
+                    >
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(6,182,212,0.2)_0%,transparent_70%)]" />
+                    </motion.div>
                     {/* Chat Header */}
                     <div className={cn(
                       "p-4 border-b flex items-center justify-between",
@@ -2004,12 +2549,32 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                           <span className="text-[9px] text-zinc-500 uppercase tracking-widest">{selectedChatEntity.role}</span>
                         </div>
                       </div>
-                      <button 
-                        onClick={() => setIsChatOpen(false)}
-                        className="p-2 hover:bg-red-500/10 text-zinc-500 hover:text-red-500 rounded-full transition-all"
-                      >
-                        <X size={20} />
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={() => setIsEntangled(!isEntangled)}
+                          className={cn(
+                            "px-3 py-1 rounded text-[10px] font-bold transition-all border flex items-center gap-2",
+                            isEntangled 
+                              ? "bg-purple-500 border-purple-400 text-white shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
+                              : "border-zinc-700 text-zinc-500 hover:text-zinc-300"
+                          )}
+                        >
+                          <Activity size={10} className={isEntangled ? "animate-spin" : ""} />
+                          {isEntangled ? '[ENTRELAZADO]' : '[ENTRELAZAR]'}
+                        </button>
+                        <button 
+                          onClick={() => setChatMessages([])}
+                          className="px-3 py-1 rounded text-[10px] font-bold transition-all border border-cyan-500/30 text-cyan-500 hover:bg-cyan-500/10"
+                        >
+                          [NUEVO_CHAT]
+                        </button>
+                        <button 
+                          onClick={() => setIsChatOpen(false)}
+                          className="p-2 hover:bg-red-500/10 text-zinc-500 hover:text-red-500 rounded-full transition-all"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Messages Area */}
@@ -2035,11 +2600,20 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
                             <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{msg.sender}</span>
                           </div>
                           <div className={cn(
-                            "p-4 rounded-2xl text-sm leading-relaxed shadow-lg",
+                            "p-4 rounded-2xl text-sm leading-relaxed shadow-lg relative overflow-hidden",
                             msg.role === 'user'
                               ? "bg-cyan-500 text-black font-medium rounded-tr-none"
-                              : isDarkMode ? "bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-tl-none" : "bg-white border border-zinc-200 text-zinc-800 rounded-tl-none"
+                              : isDarkMode ? "bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-tl-none" : "bg-white border border-zinc-200 text-zinc-800 rounded-tl-none",
+                            isEntangled && "animate-pulse shadow-[0_0_20px_rgba(168,85,247,0.3)]",
+                            isEntangled && isEntanglementPulseActive && msg.role === 'user' && i === chatMessages.length - 1 && "scale-105 rotate-1 blur-[1px] brightness-150"
                           )}>
+                            {isEntangled && (
+                              <motion.div 
+                                animate={{ x: [-100, 200] }}
+                                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
+                              />
+                            )}
                             {msg.content}
                           </div>
                         </motion.div>
