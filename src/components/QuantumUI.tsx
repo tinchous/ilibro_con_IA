@@ -552,6 +552,9 @@ export const QuantumUI = () => {
   const [isNavigatorOpen, setIsNavigatorOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [customDisplayName, setCustomDisplayName] = useState('');
+  const [defaultRecipient, setDefaultRecipient] = useState<'Elon' | 'Jesus' | 'Einstein' | 'Tesla' | 'FutureScientist'>('Elon');
   const [selectedRecipient, setSelectedRecipient] = useState<'Elon' | 'Jesus' | 'Einstein' | 'Tesla' | 'FutureScientist'>('Elon');
   const [mails, setMails] = useState<any[]>([]);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -578,13 +581,26 @@ export const QuantumUI = () => {
     { id: 'elon', name: 'Elon Musk (Simulado)', role: 'Visionario', bio: 'Obsesionado con la multi-planetariedad y la simulación.', color: 'text-blue-400', icon: <Cpu size={20} /> }
   ];
 
-  // Sync Auth State
+  // Sync Auth State & Fetch Settings
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
       if (u) {
-        // Sync user profile to Firestore
+        // Fetch existing settings
         const userRef = doc(db, 'users', u.uid);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          if (data.characterType) setCharacterType(data.characterType);
+          if (data.customDisplayName) setCustomDisplayName(data.customDisplayName);
+          if (data.defaultRecipient) {
+            setDefaultRecipient(data.defaultRecipient);
+            setSelectedRecipient(data.defaultRecipient);
+          }
+        }
+
+        // Sync user profile to Firestore
         setDoc(userRef, {
           uid: u.uid,
           email: u.email,
@@ -600,6 +616,28 @@ export const QuantumUI = () => {
     });
     return () => unsubscribe();
   }, [characterType, psiValue, currentChapterKey, solvedEnigmasCount]);
+
+  const handleSaveSettings = async () => {
+    if (!user) return;
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, {
+        customDisplayName,
+        characterType,
+        defaultRecipient,
+        lastUpdated: serverTimestamp()
+      }, { merge: true });
+      
+      setSelectedRecipient(defaultRecipient);
+      setIsSettingsOpen(false);
+      setTransmission({ sender: 'SISTEMA', message: 'Configuración de identidad actualizada correctamente.' });
+      setTimeout(() => setTransmission(null), 5000);
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      setTransmission({ sender: 'SISTEMA', message: 'Error al actualizar la configuración.' });
+      setTimeout(() => setTransmission(null), 5000);
+    }
+  };
 
   // Sync Mails from Firestore
   useEffect(() => {
@@ -628,7 +666,7 @@ export const QuantumUI = () => {
 
     const userMsg = chatInput;
     setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', content: userMsg, sender: 'Observador' }]);
+    setChatMessages(prev => [...prev, { role: 'user', content: userMsg, sender: customDisplayName || 'Observador' }]);
     setIsChatTyping(true);
 
     try {
@@ -636,7 +674,7 @@ export const QuantumUI = () => {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [
-          { role: 'user', parts: [{ text: `Eres ${selectedChatEntity.name}, un ${selectedChatEntity.role}. Bio: ${selectedChatEntity.bio}. Responde al mensaje del Observador en el contexto del universo cuántico de Laniakea. Sé breve y mantén el personaje. Mensaje: ${userMsg}` }] }
+          { role: 'user', parts: [{ text: `Eres ${selectedChatEntity.name}, un ${selectedChatEntity.role}. Bio: ${selectedChatEntity.bio}. Responde al mensaje de ${customDisplayName || 'el Observador'} en el contexto del universo cuántico de Laniakea. Sé breve y mantén el personaje. Mensaje: ${userMsg}` }] }
         ]
       });
 
@@ -1065,8 +1103,15 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
                   <img src={user.photoURL || ''} alt="User" className="w-5 h-5 rounded-full border border-cyan-500/50" referrerPolicy="no-referrer" />
-                  <span className="text-[10px] uppercase tracking-widest hidden md:inline">{user.displayName}</span>
+                  <span className="text-[10px] uppercase tracking-widest hidden md:inline">{customDisplayName || user.displayName}</span>
                 </div>
+                <button 
+                  onClick={() => setIsSettingsOpen(true)}
+                  className="p-1.5 rounded-md text-zinc-500 hover:text-cyan-400 hover:bg-cyan-500/10 transition-all"
+                  title="Configuración de Perfil"
+                >
+                  <Shield size={14} />
+                </button>
                 <button 
                   onClick={handleLogout}
                   className="p-1.5 rounded-md text-zinc-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
@@ -2074,6 +2119,121 @@ El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** qu
               setIsMapOpen(false);
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* User Settings Modal */}
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className={cn(
+                "w-full max-w-md border rounded-2xl shadow-2xl overflow-hidden flex flex-col",
+                isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
+              )}
+            >
+              <div className="p-6 border-b border-zinc-800 flex items-center justify-between bg-black/20">
+                <div className="flex items-center gap-3">
+                  <Shield className="text-cyan-500" size={20} />
+                  <h2 className="text-xl font-bold tracking-tight uppercase">Configuración de Identidad</h2>
+                </div>
+                <button 
+                  onClick={() => setIsSettingsOpen(false)}
+                  className="p-2 hover:bg-zinc-800 rounded-full transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6 flex-1 overflow-y-auto">
+                {/* Display Name */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Nombre de Observador:</label>
+                  <input 
+                    type="text"
+                    value={customDisplayName}
+                    onChange={(e) => setCustomDisplayName(e.target.value)}
+                    placeholder={user?.displayName || "Introduce tu nombre..."}
+                    className={cn(
+                      "w-full px-4 py-3 border rounded-xl font-mono text-sm outline-none transition-all",
+                      isDarkMode ? "bg-black border-zinc-800 focus:border-cyan-500" : "bg-zinc-50 border-zinc-200 focus:border-cyan-600"
+                    )}
+                  />
+                  <p className="text-[9px] text-zinc-500 italic">Cómo te verán las entidades de Laniakea.</p>
+                </div>
+
+                {/* Character Type */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Estado Ontológico:</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['HUMAN', 'VARIABLE', 'DATA'] as const).map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setCharacterType(type)}
+                        className={cn(
+                          "px-3 py-2 rounded-lg border text-[10px] font-bold transition-all",
+                          characterType === type
+                            ? "bg-cyan-500 border-cyan-400 text-black shadow-[0_0_10px_rgba(6,182,212,0.3)]"
+                            : isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300" : "bg-zinc-100 border-zinc-200 text-zinc-500 hover:text-black"
+                        )}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-zinc-500 italic">Define cómo interactúas con la función de onda.</p>
+                </div>
+
+                {/* Default Recipient */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Receptor Predeterminado (Mail):</label>
+                  <div className="flex flex-wrap gap-2">
+                    {(['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist'] as const).map((rec) => (
+                      <button
+                        key={rec}
+                        onClick={() => setDefaultRecipient(rec)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full border text-[10px] font-bold transition-all",
+                          defaultRecipient === rec
+                            ? "bg-purple-500 border-purple-400 text-white shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                            : isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-500 hover:text-zinc-300" : "bg-zinc-100 border-zinc-200 text-zinc-500 hover:text-black"
+                        )}
+                      >
+                        {rec}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[9px] text-zinc-500 italic">La consciencia con la que tienes mayor afinidad.</p>
+                </div>
+              </div>
+
+              <div className="p-6 border-t border-zinc-800 bg-black/20 flex gap-3">
+                <button 
+                  onClick={() => setIsSettingsOpen(false)}
+                  className={cn(
+                    "flex-1 px-4 py-3 rounded-xl font-bold text-xs transition-all",
+                    isDarkMode ? "bg-zinc-800 text-zinc-400 hover:bg-zinc-700" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                  )}
+                >
+                  CANCELAR
+                </button>
+                <button 
+                  onClick={handleSaveSettings}
+                  className="flex-1 px-4 py-3 bg-cyan-500 text-black font-black text-xs rounded-xl hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)] transition-all active:scale-95"
+                >
+                  GUARDAR_CAMBIOS
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
