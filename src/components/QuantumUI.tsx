@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Terminal, Database, Cpu, AlertTriangle, FileText, Mail, BookOpen, User, Activity, Zap, History, ChevronRight, HelpCircle, Sun, Moon } from 'lucide-react';
+import { Terminal, Database, Cpu, AlertTriangle, FileText, Mail, BookOpen, User, Activity, Zap, History, ChevronRight, HelpCircle, Sun, Moon, Shield, Search, LogOut, Image as ImageIcon, X, MessageSquare, Bot, Sparkles, Send } from 'lucide-react';
 import { BOOK_DATA, Chapter, Branch, Artifact, Choice } from '../data/book';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -8,7 +8,8 @@ import rehypeKatex from 'rehype-katex';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { auth, db, signInWithGoogle, collection, addDoc, serverTimestamp, query, where, orderBy, onSnapshot, doc, setDoc, getDoc } from '../firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, User as FirebaseUser, signOut } from 'firebase/auth';
+import { GoogleGenAI } from "@google/genai";
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -67,9 +68,15 @@ interface HistoryItem {
   isBlackHole?: boolean;
 }
 
-const transformText = (text: string, isBlackHoleActive: boolean) => {
-  if (!isBlackHoleActive) return text;
-  return text
+const ensureString = (val: any): string => {
+  if (val === undefined || val === null) return "";
+  return typeof val === 'string' ? val : JSON.stringify(val);
+};
+
+const transformText = (text: any, isBlackHoleActive: boolean) => {
+  const str = ensureString(text);
+  if (!isBlackHoleActive) return str;
+  return str
     .replace(/Silas/g, 'Salis')
     .replace(/Tesla/g, 'Lesta')
     .replace(/Elena/g, 'Anela')
@@ -106,7 +113,7 @@ const ArtifactCard = ({ artifact, isDarkMode, isBlackHoleActive }: { artifact: A
         isDarkMode ? "text-zinc-400" : "text-zinc-500"
       )}>
         {artifact.title && <div className={cn("font-bold", isDarkMode ? "text-zinc-200" : "text-zinc-800")}>{transformText(artifact.title, isBlackHoleActive)}</div>}
-        {artifact.date && <div>DATE: {artifact.date}</div>}
+        {artifact.date && <div>DATE: {ensureString(artifact.date)}</div>}
         {artifact.author && <div>FROM: {transformText(artifact.author, isBlackHoleActive)}</div>}
       </div>
       <div className={cn(
@@ -114,6 +121,181 @@ const ArtifactCard = ({ artifact, isDarkMode, isBlackHoleActive }: { artifact: A
         isDarkMode ? "text-zinc-300" : "text-zinc-700"
       )}>
         "{transformText(artifact.content, isBlackHoleActive)}"
+      </div>
+    </motion.div>
+  );
+};
+
+const MailCard = ({ mail, isInbox, isDarkMode }: { mail: any; isInbox: boolean; isDarkMode: boolean }) => {
+  const content = isInbox ? mail.reply : mail.body;
+  if (!content && isInbox) return null;
+
+  const quantumId = Math.random().toString(36).substring(2, 10).toUpperCase();
+  
+  const senderColors: Record<string, string> = {
+    'Elon': 'text-cyan-400',
+    'Jesus': 'text-red-400',
+    'Einstein': 'text-purple-400',
+    'Tesla': 'text-yellow-400',
+    'FutureScientist': 'text-emerald-400'
+  };
+
+  const senderColor = isInbox ? (senderColors[mail.recipient] || 'text-cyan-400') : 'text-zinc-400';
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.01 }}
+      className={cn(
+        "border rounded-2xl overflow-hidden mb-8 shadow-2xl transition-all group relative",
+        isDarkMode 
+          ? "bg-zinc-900/40 border-zinc-800/50 backdrop-blur-md" 
+          : "bg-white/80 border-zinc-200 backdrop-blur-md"
+      )}
+    >
+      {/* Scanning Effect */}
+      <motion.div 
+        animate={{ top: ['-10%', '110%'] }}
+        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+        className="absolute left-0 right-0 h-[2px] bg-cyan-500/20 z-20 pointer-events-none"
+      />
+
+      {/* Email Header */}
+      <div className={cn(
+        "px-6 py-5 border-b flex flex-col gap-3 relative overflow-hidden",
+        isDarkMode ? "bg-black/60 border-zinc-800/50" : "bg-zinc-50 border-zinc-200"
+      )}>
+        <div className="absolute top-0 right-0 p-1 opacity-10">
+          <Mail size={80} className="rotate-12" />
+        </div>
+
+        <div className="flex justify-between items-start relative z-10">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20">
+                <User size={14} className="text-cyan-500" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-cyan-500/50 tracking-widest uppercase">FROM:</span>
+                <span className={cn("text-sm font-mono font-bold tracking-tight", isInbox ? senderColor : (isDarkMode ? "text-zinc-100" : "text-zinc-800"))}>
+                  {isInbox ? `${ensureString(mail.recipient)}@laniakea.node` : "OBSERVADOR@origin.real"}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-zinc-500/10 flex items-center justify-center border border-zinc-500/20">
+                <Bot size={14} className="text-zinc-500" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[8px] font-black text-cyan-500/50 tracking-widest uppercase">TO:</span>
+                <span className={cn("text-sm font-mono tracking-tight", isDarkMode ? "text-zinc-400" : "text-zinc-500")}>
+                  {isInbox ? "OBSERVADOR@origin.real" : `${ensureString(mail.recipient)}@laniakea.node`}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="text-right space-y-2">
+            <div className="inline-block px-2 py-1 bg-black/40 rounded border border-zinc-800 text-[9px] font-mono text-zinc-400 font-bold tracking-widest">
+              ID: Q-{quantumId}
+            </div>
+            <div className="text-[9px] font-mono text-zinc-500 flex items-center justify-end gap-2">
+              <Activity size={10} />
+              {mail.sentAt ? new Date(mail.sentAt.seconds * 1000).toLocaleString() : "PENDING..."}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Subject Line */}
+      <div className={cn(
+        "px-8 py-4 border-b flex items-center gap-4 relative",
+        isDarkMode ? "bg-zinc-800/20 border-zinc-800/50" : "bg-zinc-100/30 border-zinc-200"
+      )}>
+        <Zap size={14} className="text-cyan-500/50" />
+        <div className="flex flex-col">
+          <span className="text-[8px] font-black text-cyan-500/50 tracking-widest uppercase">SUBJECT:</span>
+          <span className={cn("text-base font-bold tracking-tight", isDarkMode ? "text-zinc-100" : "text-zinc-900")}>
+            {ensureString(mail.subject || 'Sin Asunto')}
+          </span>
+        </div>
+      </div>
+
+      {/* Email Body */}
+      <div className={cn(
+        "p-10 text-base leading-relaxed min-h-[160px] relative",
+        isDarkMode ? "text-zinc-300 bg-zinc-950/20" : "text-zinc-800 bg-white"
+      )}>
+        <div className="prose prose-invert prose-zinc max-w-none prose-sm font-serif selection:bg-cyan-500/40">
+          <ReactMarkdown 
+            remarkPlugins={[remarkMath]} 
+            rehypePlugins={[rehypeKatex]}
+          >
+            {ensureString(content)}
+          </ReactMarkdown>
+        </div>
+
+        {mail.image && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mt-10 rounded-2xl overflow-hidden border border-zinc-800/50 shadow-2xl group/img relative"
+          >
+            <img src={mail.image} alt="Attachment" className="w-full h-auto transition-transform duration-700 group-hover/img:scale-105" referrerPolicy="no-referrer" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity flex items-end p-6">
+              <div className="flex items-center gap-3 text-white">
+                <ImageIcon size={20} className="text-cyan-400" />
+                <span className="text-xs font-mono font-bold tracking-widest uppercase">Visualización Cuántica Colapsada</span>
+              </div>
+            </div>
+            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[8px] font-mono text-white/80 uppercase tracking-widest">
+              IMG_ATTACHMENT_DETECTED
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Quantum Metadata Footer */}
+        <div className="mt-16 pt-8 border-t border-zinc-800/30 flex justify-between items-center">
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <motion.div 
+                  animate={{ scale: [1, 1.5, 1], opacity: [1, 0, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className={cn(
+                    "absolute inset-0 rounded-full blur-sm",
+                    mail.status === 'DELIVERED' ? "bg-green-500/50" : "bg-yellow-500/50"
+                  )} 
+                />
+                <div className={cn(
+                  "w-2.5 h-2.5 rounded-full relative z-10",
+                  mail.status === 'DELIVERED' ? "bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.6)]" : "bg-yellow-500 shadow-[0_0_10px_rgba(234,179,8,0.6)]"
+                )} />
+              </div>
+              <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-[0.3em]">
+                {ensureString(mail.status || 'SENT')}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Shield size={12} className="text-zinc-600" />
+              <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-[0.3em]">
+                AES-Q-2048
+              </span>
+            </div>
+          </div>
+          {mail.senderBranch !== mail.recipientBranch && (
+            <motion.div 
+              animate={{ opacity: [1, 0.5, 1] }}
+              transition={{ duration: 1, repeat: Infinity }}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-500/5 rounded-full border border-red-500/20"
+            >
+              <AlertTriangle size={12} className="text-red-500" />
+              <div className="text-[9px] text-red-500 font-black uppercase tracking-widest">
+                INTERFERENCIA_DETECTADA
+              </div>
+            </motion.div>
+          )}
+        </div>
       </div>
     </motion.div>
   );
@@ -148,7 +330,7 @@ const BlackHoleOverlay = ({ isDarkMode }: { isDarkMode: boolean }) => (
   </motion.div>
 );
 
-const QuantumMap = ({ history, currentKey, isDarkMode, onClose }: { history: HistoryItem[], currentKey: string, isDarkMode: boolean, onClose: () => void }) => {
+const QuantumMap = ({ history, currentKey, isDarkMode, onClose, onNodeClick }: { history: HistoryItem[], currentKey: string, isDarkMode: boolean, onClose: () => void, onNodeClick: (key: string) => void }) => {
   const allNodes = [...history, { key: currentKey }];
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
   const [greeting, setGreeting] = useState<string | null>(null);
@@ -209,6 +391,8 @@ const QuantumMap = ({ history, currentKey, isDarkMode, onClose }: { history: His
     } else {
       setGreeting(`Nodo ${chapter?.id || '?'}: Estado ${chapter?.branch || 'DESCONOCIDO'}. Estabilidad: ${Math.random().toFixed(3)}`);
     }
+    
+    onNodeClick(key);
     setTimeout(() => setGreeting(null), 6000);
   };
 
@@ -322,7 +506,7 @@ const QuantumMap = ({ history, currentKey, isDarkMode, onClose }: { history: His
               </motion.div>
               
               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 whitespace-nowrap text-[8px] font-mono uppercase tracking-tighter text-zinc-500 opacity-0 hover:opacity-100 transition-opacity">
-                {nodeChapter?.title}
+                {ensureString(nodeChapter?.title)}
               </div>
             </motion.div>
           );
@@ -344,6 +528,7 @@ const QuantumMap = ({ history, currentKey, isDarkMode, onClose }: { history: His
 
 export const QuantumUI = () => {
   const [currentChapterKey, setCurrentChapterKey] = useState('0-REAL');
+  const [visitedChapters, setVisitedChapters] = useState<Record<string, number>>({ '0-REAL': 1 });
   const [isWormholeActive, setIsWormholeActive] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [psiValue, setPsiValue] = useState(1.000);
@@ -356,7 +541,9 @@ export const QuantumUI = () => {
   const [currentHint, setCurrentHint] = useState<{ sender: string; message: string } | null>(null);
   const [transmission, setTransmission] = useState<{ sender: string; message: string } | null>(null);
   const [isMailOpen, setIsMailOpen] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
   const [mailContent, setMailContent] = useState('');
+  const [mailSubject, setMailSubject] = useState('');
   const [sentMails, setSentMails] = useState<{ to: string; content: string; reply?: string }[]>([]);
   const [isSendingMail, setIsSendingMail] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -369,6 +556,27 @@ export const QuantumUI = () => {
   const [mails, setMails] = useState<any[]>([]);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [lastGeneratedImage, setLastGeneratedImage] = useState<string | null>(null);
+  const [mailTab, setMailTab] = useState<'inbox' | 'outbox'>('inbox');
+  const [hasNewMail, setHasNewMail] = useState(false);
+  const [selectedMailImage, setSelectedMailImage] = useState<string | null>(null);
+  const [temporalFragments, setTemporalFragments] = useState<Record<string, Chapter>>({});
+  const [isTemporalEventActive, setIsTemporalEventActive] = useState(false);
+  const mailImageInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Chat States
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{ role: 'user' | 'ai'; content: string; sender: string }[]>([]);
+  const [selectedChatEntity, setSelectedChatEntity] = useState<any>(null);
+  const [isChatTyping, setIsChatTyping] = useState(false);
+  const [chatInput, setChatInput] = useState('');
+
+  const chatEntities = [
+    { id: 'einstein', name: 'Albert Einstein', role: 'Científico del Pasado', bio: 'Padre de la relatividad. Interesado en la curvatura del espacio-tiempo de Laniakea.', color: 'text-purple-400', icon: <User size={20} /> },
+    { id: 'tesla', name: 'Nikola Tesla', role: 'Científico del Pasado', bio: 'Maestro de la energía inalámbrica. Cree que Laniakea es una gran red de frecuencias.', color: 'text-yellow-400', icon: <Zap size={20} /> },
+    { id: 'future_ai', name: 'NÚCLEO_X', role: 'IA del Futuro', bio: 'Una consciencia colectiva del año 4096. Observa el pasado como un flujo de datos.', color: 'text-cyan-400', icon: <Bot size={20} /> },
+    { id: 'hologram', name: 'Holograma_7', role: 'Entidad de Datos', bio: 'Un eco de una civilización que nunca existió. Habla en acertijos binarios.', color: 'text-emerald-400', icon: <Activity size={20} /> },
+    { id: 'elon', name: 'Elon Musk (Simulado)', role: 'Visionario', bio: 'Obsesionado con la multi-planetariedad y la simulación.', color: 'text-blue-400', icon: <Cpu size={20} /> }
+  ];
 
   // Sync Auth State
   useEffect(() => {
@@ -406,15 +614,129 @@ export const QuantumUI = () => {
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const m = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const prevCount = mails.length;
       setMails(m);
+      if (m.length > prevCount && prevCount > 0) {
+        setHasNewMail(true);
+      }
     });
     return () => unsubscribe();
   }, [user]);
 
-  // Dynamic Content Logic
+  const handleChatSend = async () => {
+    if (!chatInput.trim() || !selectedChatEntity || isChatTyping) return;
+
+    const userMsg = chatInput;
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', content: userMsg, sender: 'Observador' }]);
+    setIsChatTyping(true);
+
+    try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          { role: 'user', parts: [{ text: `Eres ${selectedChatEntity.name}, un ${selectedChatEntity.role}. Bio: ${selectedChatEntity.bio}. Responde al mensaje del Observador en el contexto del universo cuántico de Laniakea. Sé breve y mantén el personaje. Mensaje: ${userMsg}` }] }
+        ]
+      });
+
+      setChatMessages(prev => [...prev, { role: 'ai', content: response.text || '...', sender: selectedChatEntity.name }]);
+    } catch (error) {
+      console.error("Chat Error:", error);
+      setChatMessages(prev => [...prev, { role: 'ai', content: 'Error en la conexión interdimensional.', sender: 'SISTEMA' }]);
+    } finally {
+      setIsChatTyping(false);
+    }
+  };
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedMailImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Temporal Event Generator (Every 3 minutes)
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      if (!user) return;
+      
+      try {
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const response = await ai.models.generateContent({
+          model: "gemini-3-flash-preview",
+          contents: "Genera un fragmento temporal breve (máximo 100 palabras) que sea una noticia curiosa, una receta uruguaya rápida, un dato de deportes de Uruguay, o una anécdota extraña. El tono debe ser 'cuántico' y misterioso. Devuelve un JSON con: title, subtitle, content.",
+          config: { responseMimeType: "application/json" }
+        });
+
+        const data = JSON.parse(response.text);
+        const fragmentId = `FRAGMENT-${Date.now()}`;
+        const newFragment: Chapter = {
+          id: 999,
+          branch: Math.random() > 0.5 ? 'REAL' : 'IMAGINARY',
+          title: `FRAGMENTO: ${data.title}`,
+          subtitle: data.subtitle,
+          content: data.content,
+          choices: [{ text: 'VOLVER A LA REALIDAD', nextChapter: 0, nextBranch: 'REAL' }]
+        };
+
+        setTemporalFragments(prev => ({ ...prev, [fragmentId]: newFragment }));
+        setIsTemporalEventActive(true);
+        setTransmission({ sender: 'SISTEMA_LANIKEA', message: 'NUEVA_ANOMALÍA_DETECTADA: Fragmento temporal disponible en el Navegador.' });
+        setTimeout(() => setTransmission(null), 5000);
+      } catch (error) {
+        console.error("Error generating temporal fragment:", error);
+      }
+    }, 180000); // 3 minutes
+
+    return () => clearInterval(interval);
+  }, [user]);
+
+  // Dynamic Background Logic
+  const getChapterBackground = (ch: Chapter) => {
+    const id = ch.id;
+    const isImaginary = ch.branch === 'IMAGINARY';
+    
+    if (isBlackHoleActive) return 'radial-gradient(circle at center, #000 0%, #111 100%)';
+    if (isImaginary) return `linear-gradient(135deg, ${isDarkMode ? '#1a0b2e' : '#f3e8ff'} 0%, ${isDarkMode ? '#000' : '#fff'} 100%)`;
+    
+    // Seeded background based on ID
+    const hue = (id * 137.5) % 360;
+    return `linear-gradient(135deg, hsla(${hue}, 70%, ${isDarkMode ? '5%' : '95%'}, 1) 0%, ${isDarkMode ? '#000' : '#fff'} 100%)`;
+  };
   const getDynamicChapter = (baseChapter: Chapter): Chapter => {
     let modifiedContent = baseChapter.content;
     let extraChoices: Choice[] = [];
+    
+    const visitCount = visitedChapters[currentChapterKey] || 0;
+
+    // Revisit Glitch Logic (Imaginary Branch)
+    if (visitCount > 1 && baseChapter.branch === 'IMAGINARY') {
+      modifiedContent = `### [ADVERTENCIA: PARADOJA TEMPORAL DETECTADA]
+
+Has regresado a este nodo, pero el tejido de la **Rama Imaginaria** se ha desgarrado por la redundancia de tu observación. Lo que ves no es el capítulo original, sino un eco corrupto de la información. Las figuras de Einstein y Tesla se desvanecen en estática violeta. Una voz que no pertenece a este mundo susurra desde los espacios entre los párrafos:
+
+*"El observador que regresa no es el mismo que partió. Al volver, has traído contigo la entropía de tu propio futuro. Has descubierto la grieta en el algoritmo de Laniakea."*
+
+El espacio se pliega sobre sí mismo, revelando una **Rama Inexistente (Ω)** que late con la frecuencia del vacío.`;
+
+      extraChoices.push(
+        { text: 'EXPLORAR LA RAMA INEXISTENTE (Ω)', nextChapter: 99, nextBranch: 'IMAGINARY', triggerWormhole: true },
+        { text: 'REESCRIBIR EL PASADO (REINICIO)', nextChapter: 0, nextBranch: 'REAL', triggerWormhole: true }
+      );
+    }
 
     // Inject character-specific narrative paths
     if (characterType === 'HUMAN') {
@@ -443,7 +765,8 @@ export const QuantumUI = () => {
     };
   };
 
-  const chapter = getDynamicChapter(BOOK_DATA[currentChapterKey] || BOOK_DATA['0-REAL']);
+  const chapter = getDynamicChapter(BOOK_DATA[currentChapterKey] || temporalFragments[currentChapterKey] || BOOK_DATA['0-REAL']);
+  const isGlitchy = (visitedChapters[currentChapterKey] || 0) > 1 && chapter.branch === 'IMAGINARY';
 
   useEffect(() => {
     setEnigmaAnswer('');
@@ -493,6 +816,11 @@ export const QuantumUI = () => {
     const branch = nextBranch || chapter.branch;
     const key = `${nextId}-${branch}`;
     
+    setVisitedChapters(prev => ({
+      ...prev,
+      [key]: (prev[key] || 0) + 1
+    }));
+
     if (triggerWormhole) {
       setIsWormholeActive(true);
       if (characterType === 'HUMAN') setCharacterType('VARIABLE');
@@ -542,10 +870,16 @@ export const QuantumUI = () => {
     }
     
     const currentContent = mailContent;
-    setMailContent(''); // Clear immediately to prevent double send
+    const currentSubject = mailSubject || `Consulta del Observador - Nodo ${currentChapterKey}`;
+    const currentImage = selectedMailImage || lastGeneratedImage;
+
+    setMailContent(''); 
+    setMailSubject('');
+    setSelectedMailImage(null);
+    setLastGeneratedImage(null);
     setIsSendingMail(true);
     
-    const subject = `Consulta del Observador - Nodo ${currentChapterKey}`;
+    const subject = currentSubject;
     const body = currentContent;
     const recipient = selectedRecipient;
     const senderBranch = chapter.branch;
@@ -560,7 +894,8 @@ export const QuantumUI = () => {
         status: 'SENT',
         sentAt: serverTimestamp(),
         senderBranch,
-        recipientBranch: recipient === 'Elon' || recipient === 'FutureScientist' ? 'REAL' : 'IMAGINARY'
+        recipientBranch: recipient === 'Elon' || recipient === 'FutureScientist' ? 'REAL' : 'IMAGINARY',
+        image: currentImage
       });
 
       // 2. Call Backend for Grok Reply
@@ -623,10 +958,13 @@ export const QuantumUI = () => {
   };
 
   return (
-    <div className={cn(
-      "min-h-screen transition-colors duration-500 font-sans selection:bg-cyan-500/30 selection:text-cyan-200",
-      isDarkMode ? "bg-black text-zinc-300" : "bg-zinc-50 text-zinc-900"
-    )}>
+    <div 
+      className={cn(
+        "min-h-screen transition-all duration-1000 font-sans selection:bg-cyan-500/30 selection:text-cyan-200",
+        isDarkMode ? "bg-black text-zinc-300" : "bg-zinc-50 text-zinc-900"
+      )}
+      style={{ background: getChapterBackground(chapter) }}
+    >
       {/* Background Grid */}
       <div className={cn(
         "fixed inset-0 bg-[linear-gradient(to_right,#18181b_1px,transparent_1px),linear-gradient(to_bottom,#18181b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none",
@@ -692,34 +1030,50 @@ export const QuantumUI = () => {
               {isDarkMode ? <Sun size={16} /> : <Moon size={16} />}
             </button>
             <button 
-              onClick={() => setIsMailOpen(true)}
+              onClick={() => {
+                setIsMailOpen(true);
+                setHasNewMail(false);
+              }}
               className={cn(
                 "relative flex items-center gap-2 transition-all hover:scale-105 active:scale-95",
                 isDarkMode ? "text-zinc-500 hover:text-cyan-400" : "text-zinc-400 hover:text-cyan-600"
               )}
+              title="Quantum Mail"
             >
               <Mail size={14} />
-              <span className="hidden sm:inline">QUANTUM_MAIL</span>
-              {sentMails.length > 0 && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-ping" />
+              <span className="hidden sm:inline">MAIL</span>
+              {hasNewMail && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-cyan-500 rounded-full animate-ping shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
               )}
+            </button>
+            <button 
+              onClick={() => setIsChatOpen(true)}
+              className={cn(
+                "flex items-center gap-2 transition-all hover:scale-105 active:scale-95",
+                isDarkMode ? "text-zinc-500 hover:text-purple-400" : "text-zinc-400 hover:text-purple-600"
+              )}
+              title="Quantum Chat"
+            >
+              <MessageSquare size={14} />
+              <span className="hidden sm:inline">CHAT</span>
             </button>
             <div className={cn("hidden lg:flex items-center gap-2", isDarkMode ? "text-zinc-500" : "text-zinc-400")}>
               <BookOpen size={14} />
               <span>ENIGMAS: {solvedEnigmasCount}/55</span>
             </div>
-            <div className={cn("flex items-center gap-2", isDarkMode ? "text-zinc-500" : "text-zinc-400")}>
-              <User size={14} />
-              <span>OBSERVER: {psiValue.toFixed(3)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-cyan-500">
-              <Terminal size={14} />
-              <span>STATE: {characterType}</span>
-            </div>
             {user ? (
-              <div className="flex items-center gap-2">
-                <img src={user.photoURL || ''} alt="User" className="w-5 h-5 rounded-full border border-cyan-500/50" referrerPolicy="no-referrer" />
-                <span className="text-[10px] uppercase tracking-widest hidden md:inline">{user.displayName}</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <img src={user.photoURL || ''} alt="User" className="w-5 h-5 rounded-full border border-cyan-500/50" referrerPolicy="no-referrer" />
+                  <span className="text-[10px] uppercase tracking-widest hidden md:inline">{user.displayName}</span>
+                </div>
+                <button 
+                  onClick={handleLogout}
+                  className="p-1.5 rounded-md text-zinc-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                  title="Cerrar Sesión"
+                >
+                  <LogOut size={14} />
+                </button>
               </div>
             ) : (
               <button 
@@ -759,18 +1113,30 @@ export const QuantumUI = () => {
               opacity: 1, 
               rotateY: 0, 
               scale: 1, 
-              filter: 'blur(0px)',
-              x: chapter.branch === 'IMAGINARY' ? [0, -1, 1, -1, 1, 0] : 0,
-              y: chapter.branch === 'IMAGINARY' ? [0, 1, -1, 1, -1, 0] : 0
+              filter: isGlitchy ? 'blur(0.5px)' : 'blur(0px)',
+              x: (chapter.branch === 'IMAGINARY' || isGlitchy) ? [0, -1.5, 1.5, -1.5, 1.5, 0] : 0,
+              y: (chapter.branch === 'IMAGINARY' || isGlitchy) ? [0, 1.5, -1.5, 1.5, -1.5, 0] : 0
             }}
             exit={{ opacity: 0, rotateY: -90, scale: 1.2, filter: 'blur(10px)' }}
             transition={{ 
               duration: 0.8, 
               ease: "circOut",
-              x: { duration: 0.2, repeat: Infinity, repeatType: "mirror" },
-              y: { duration: 0.2, repeat: Infinity, repeatType: "mirror" }
+              x: { duration: 0.15, repeat: Infinity, repeatType: "mirror" },
+              y: { duration: 0.15, repeat: Infinity, repeatType: "mirror" }
             }}
           >
+            {isGlitchy && (
+              <motion.div 
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8 flex items-center gap-2 px-3 py-1 bg-purple-500/10 border border-purple-500/50 rounded-full w-fit shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+              >
+                <Zap size={12} className="text-purple-400 animate-bounce" />
+                <span className="font-mono text-[10px] text-purple-400 font-bold uppercase tracking-widest">
+                  Rama Inexistente Detectada: Error de Redundancia Temporal
+                </span>
+              </motion.div>
+            )}
             {/* Progress Bar */}
             <div className={cn(
               "w-full h-1 rounded-full overflow-hidden mb-12",
@@ -785,7 +1151,7 @@ export const QuantumUI = () => {
             </div>
             <div className="mb-12">
               <div className="text-cyan-500 font-mono text-sm tracking-[0.3em] mb-2 uppercase flex items-center">
-                {chapter.title}
+                {ensureString(chapter.title)}
                 <BlinkingCursor className="h-3 w-1 ml-2" />
               </div>
               <h1 className={cn(
@@ -811,7 +1177,7 @@ export const QuantumUI = () => {
                   remarkPlugins={[remarkMath]} 
                   rehypePlugins={[rehypeKatex]}
                 >
-                  {transformText(chapter.content, isBlackHoleActive)}
+                  {ensureString(transformText(chapter.content, isBlackHoleActive))}
                 </ReactMarkdown>
               </div>
             </div>
@@ -1083,28 +1449,48 @@ export const QuantumUI = () => {
 
               <div className="p-4 border-b border-zinc-800">
                 <div className="relative">
-                  <Terminal className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16} />
                   <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar por ID o título..."
+                    placeholder="Buscar por ID, título o palabra clave..."
                     className={cn(
-                      "w-full pl-10 pr-4 py-2 border rounded-md font-mono text-sm outline-none transition-all",
+                      "w-full pl-10 pr-10 py-2 border rounded-md font-mono text-sm outline-none transition-all",
                       isDarkMode ? "bg-black border-zinc-800 focus:border-cyan-500" : "bg-zinc-50 border-zinc-200 focus:border-cyan-600"
                     )}
                   />
+                  {searchQuery && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                    >
+                      <ChevronRight className="rotate-90" size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                {Object.entries(BOOK_DATA)
-                  .filter(([key, ch]) => 
+                {(() => {
+                  const allNodes = { ...BOOK_DATA, ...temporalFragments };
+                  const filtered = Object.entries(allNodes).filter(([key, ch]) => 
                     key.toLowerCase().includes(searchQuery.toLowerCase()) || 
                     ch.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    ch.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
-                  )
-                  .map(([key, ch]) => (
+                    ch.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                    ch.id.toString().includes(searchQuery)
+                  );
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="flex flex-col items-center justify-center py-20 text-center opacity-50">
+                        <Search size={48} className="text-zinc-700 mb-4" />
+                        <div className="text-sm font-mono uppercase tracking-widest">No se encontraron nodos en este sector</div>
+                      </div>
+                    );
+                  }
+
+                  return filtered.map(([key, ch]) => (
                     <button
                       key={key}
                       onClick={() => {
@@ -1141,7 +1527,8 @@ export const QuantumUI = () => {
                         </motion.div>
                       )}
                     </button>
-                  ))}
+                  ));
+                })()}
               </div>
               
               <div className="p-4 border-t border-zinc-800 bg-black/20 text-[10px] font-mono text-zinc-500 text-center uppercase tracking-[0.2em]">
@@ -1203,44 +1590,7 @@ export const QuantumUI = () => {
         )}
       </AnimatePresence>
 
-      {/* Temporal Transmission Notification */}
-      <AnimatePresence>
-        {transmission && (
-          <motion.div
-            initial={{ opacity: 0, x: 100 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 100 }}
-            className={cn(
-              "fixed bottom-24 right-6 z-[150] max-w-sm border p-4 rounded-lg shadow-2xl backdrop-blur-xl transition-colors",
-              isDarkMode ? "bg-zinc-900 border-cyan-500/30" : "bg-white border-cyan-200"
-            )}
-          >
-            <div className="flex items-center gap-2 text-cyan-500 font-mono text-[10px] tracking-widest mb-2 font-bold">
-              <Terminal size={12} className="animate-pulse" />
-              <span>TRANSMISIÓN_TEMPORAL_ENTRANTE</span>
-              <BlinkingCursor className="h-2 w-0.5" />
-            </div>
-            <div className={cn(
-              "font-mono text-[9px] mb-1 uppercase tracking-tighter",
-              isDarkMode ? "text-zinc-500" : "text-zinc-400"
-            )}>
-              DE: {transmission.sender}
-            </div>
-            <div className={cn(
-              "text-xs italic leading-relaxed",
-              isDarkMode ? "text-zinc-200" : "text-zinc-800"
-            )}>
-              "{transmission.message}"
-            </div>
-            <motion.div 
-              className="absolute bottom-0 left-0 h-0.5 bg-cyan-500"
-              initial={{ width: "100%" }}
-              animate={{ width: "0%" }}
-              transition={{ duration: 8, ease: "linear" }}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Temporal Transmission Notification (Removed as per request, using dot instead) */}
 
       {/* Quantum Mail Modal */}
       <AnimatePresence>
@@ -1263,23 +1613,58 @@ export const QuantumUI = () => {
                 "p-4 border-b flex items-center justify-between",
                 isDarkMode ? "border-zinc-800 bg-zinc-900/50" : "border-zinc-200 bg-zinc-50"
               )}>
-                <div className="flex items-center gap-2 text-cyan-500 font-mono text-xs tracking-widest">
-                  <Mail size={14} className="animate-bounce" />
-                  <span>LANIAKEA_MESSENGER_v1.0</span>
-                  <BlinkingCursor className="h-3 w-1" />
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 text-cyan-500 font-mono text-xs tracking-widest">
+                    <Mail size={14} className="animate-bounce" />
+                    <span>LANIAKEA_MESSENGER_v1.0</span>
+                    <BlinkingCursor className="h-3 w-1" />
+                  </div>
+                  <div className="flex bg-black/20 rounded-md p-0.5">
+                    <button 
+                      onClick={() => { setMailTab('inbox'); setIsComposing(false); }}
+                      className={cn(
+                        "px-3 py-1 rounded text-[10px] font-bold transition-all",
+                        mailTab === 'inbox' && !isComposing ? "bg-cyan-500 text-black" : "text-zinc-500 hover:text-zinc-300"
+                      )}
+                    >
+                      INBOX
+                    </button>
+                    <button 
+                      onClick={() => { setMailTab('outbox'); setIsComposing(false); }}
+                      className={cn(
+                        "px-3 py-1 rounded text-[10px] font-bold transition-all",
+                        mailTab === 'outbox' && !isComposing ? "bg-cyan-500 text-black" : "text-zinc-500 hover:text-zinc-300"
+                      )}
+                    >
+                      SENT
+                    </button>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => setIsMailOpen(false)}
-                  className={cn(
-                    "text-xs font-mono transition-colors hover:underline",
-                    isDarkMode ? "text-zinc-500 hover:text-white" : "text-zinc-400 hover:text-black"
-                  )}
-                >
-                  [CERRAR]
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={() => setIsComposing(!isComposing)}
+                    className={cn(
+                      "px-3 py-1 rounded text-[10px] font-bold transition-all border",
+                      isComposing 
+                        ? "bg-zinc-800 border-zinc-700 text-zinc-400" 
+                        : "bg-cyan-500/10 border-cyan-500/30 text-cyan-500 hover:bg-cyan-500/20"
+                    )}
+                  >
+                    {isComposing ? '[CANCELAR]' : '[NUEVO_MENSAJE]'}
+                  </button>
+                  <button 
+                    onClick={() => setIsMailOpen(false)}
+                    className={cn(
+                      "text-xs font-mono transition-colors hover:underline",
+                      isDarkMode ? "text-zinc-500 hover:text-white" : "text-zinc-400 hover:text-black"
+                    )}
+                  >
+                    [X]
+                  </button>
+                </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 font-mono text-sm">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4 font-mono text-sm">
                 {!user && (
                   <div className="flex flex-col items-center justify-center h-full text-center space-y-4 py-12">
                     <AlertTriangle className="text-yellow-500" size={48} />
@@ -1294,157 +1679,379 @@ export const QuantumUI = () => {
                   </div>
                 )}
 
-                {user && mails.length === 0 && (
-                  <div className={cn(
-                    "text-center italic py-12",
-                    isDarkMode ? "text-zinc-600" : "text-zinc-400"
-                  )}>
-                    No hay transmisiones previas en este hilo temporal.
-                  </div>
-                )}
-
-                {user && mails.map((mail, i) => (
+                {user && isComposing && (
                   <motion.div 
-                    key={mail.id || i}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-4"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={cn(
+                      "p-6 border rounded-xl shadow-2xl",
+                      isDarkMode ? "bg-black/40 border-zinc-800" : "bg-zinc-50 border-zinc-200"
+                    )}
                   >
-                    <div className="flex justify-end">
-                      <div className={cn(
-                        "border p-4 rounded-lg rounded-tr-none max-w-[80%] shadow-sm",
-                        isDarkMode ? "bg-cyan-500/10 border-cyan-500/30" : "bg-cyan-50 border-cyan-200"
-                      )}>
-                        <div className="text-[10px] text-cyan-500 mb-1 font-bold uppercase tracking-widest flex justify-between">
-                          <span>PARA: {mail.recipient}</span>
-                          <span className={cn(
-                            "text-[8px]",
-                            mail.status === 'DELIVERED' ? "text-green-500" : 
-                            mail.status === 'SENT' ? "text-yellow-500 animate-pulse" : "text-red-500"
-                          )}>
-                            [{mail.status || 'SENT'}]
-                            {mail.senderBranch !== mail.recipientBranch && " [FUERA_DE_FASE]"}
-                          </span>
+                    <div className="text-xs font-bold text-cyan-500 mb-6 flex items-center gap-2">
+                      <Zap size={14} />
+                      <span>NUEVA_TRANSMISIÓN_CUÁNTICA</span>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Destinatario:</label>
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                          {(['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist'] as const).map(rec => (
+                            <button
+                              key={rec}
+                              onClick={() => setSelectedRecipient(rec)}
+                              className={cn(
+                                "px-3 py-1 rounded-full text-[10px] font-bold transition-all whitespace-nowrap border",
+                                selectedRecipient === rec 
+                                  ? "bg-cyan-500 border-cyan-400 text-black shadow-[0_0_10px_rgba(6,182,212,0.5)]" 
+                                  : "bg-zinc-800/50 border-zinc-700 text-zinc-500 hover:text-zinc-300"
+                              )}
+                            >
+                              {rec.toUpperCase()}
+                            </button>
+                          ))}
                         </div>
-                        <div className={isDarkMode ? "text-zinc-200" : "text-zinc-800"}>
-                          {mail.body}
-                          {mail.senderBranch !== mail.recipientBranch && (
-                            <div className="text-[8px] text-yellow-500 mt-1 italic font-bold">
-                              [ADVERTENCIA]: INTERFERENCIA_DE_PLANO_CUÁNTICO
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Asunto:</label>
+                        <input
+                          type="text"
+                          value={mailSubject}
+                          onChange={(e) => setMailSubject(e.target.value)}
+                          placeholder="ASUNTO DE LA TRANSMISIÓN..."
+                          className={cn(
+                            "w-full border px-4 py-2 font-mono text-xs outline-none rounded-lg transition-all",
+                            isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Contenido:</label>
+                        <textarea
+                          value={mailContent}
+                          onChange={(e) => setMailContent(e.target.value)}
+                          placeholder={`Escribe tu mensaje para ${selectedRecipient}...`}
+                          className={cn(
+                            "w-full border px-4 py-3 font-mono text-xs outline-none rounded-lg transition-all min-h-[150px] resize-none",
+                            isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
+                          )}
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-2">
+                        <label className="text-[10px] font-bold text-zinc-500 uppercase">Adjuntos:</label>
+                        <div className="flex gap-4 items-center">
+                          <input 
+                            type="file" 
+                            ref={mailImageInputRef} 
+                            onChange={handleImageSelect} 
+                            accept="image/*" 
+                            className="hidden" 
+                          />
+                          <button
+                            onClick={() => mailImageInputRef.current?.click()}
+                            className={cn(
+                              "flex items-center gap-2 px-4 py-2 border rounded-lg font-mono text-[10px] font-bold transition-all",
+                              isDarkMode ? "bg-zinc-800/50 border-zinc-700 text-zinc-400 hover:text-white" : "bg-zinc-100 border-zinc-200 text-zinc-500 hover:text-black"
+                            )}
+                          >
+                            <ImageIcon size={14} />
+                            ADJUNTAR IMAGEN CUÁNTICA
+                          </button>
+                          {selectedMailImage && (
+                            <div className="relative group">
+                              <img src={selectedMailImage} alt="Preview" className="w-12 h-12 rounded border border-cyan-500 object-cover" />
+                              <button 
+                                onClick={() => setSelectedMailImage(null)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X size={10} />
+                              </button>
                             </div>
                           )}
                         </div>
                       </div>
-                    </div>
-                    
-                    {mail.reply && (
-                      <div className="flex justify-start">
-                        <div className={cn(
-                          "border p-4 rounded-lg rounded-tl-none max-w-[80%] shadow-sm",
-                          isDarkMode ? "bg-zinc-800 border-zinc-700" : "bg-zinc-50 border-zinc-200"
-                        )}>
-                          <div className="text-[10px] text-zinc-500 mb-1 font-bold uppercase tracking-widest">DE: {mail.recipient}</div>
-                          <div className={cn("italic", isDarkMode ? "text-zinc-300" : "text-zinc-600")}>
-                            <ReactMarkdown 
-                              remarkPlugins={[remarkMath]} 
-                              rehypePlugins={[rehypeKatex]}
-                            >
-                              {mail.reply}
-                            </ReactMarkdown>
+
+                      <div className="flex justify-end gap-3 pt-4">
+                        <button 
+                          onClick={() => generateQuantumImage(mailContent)}
+                          disabled={isGeneratingImage || !mailContent.trim()}
+                          className={cn(
+                            "px-4 py-2 rounded-lg transition-all flex items-center gap-2 text-[10px] font-bold border",
+                            isDarkMode ? "bg-zinc-800 border-zinc-700 text-zinc-400 hover:text-cyan-400" : "bg-zinc-100 border-zinc-200 text-zinc-600 hover:text-cyan-600"
+                          )}
+                        >
+                          <Sparkles size={14} className={isGeneratingImage ? "animate-spin" : ""} />
+                          {isGeneratingImage ? 'GENERANDO...' : 'GENERAR_IMAGEN_IA'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleSendMessage();
+                            setIsComposing(false);
+                          }}
+                          disabled={isSendingMail || !mailContent.trim()}
+                          className={cn(
+                            "px-8 py-2 text-black font-black uppercase tracking-widest text-xs rounded-lg transition-all active:scale-95 flex items-center justify-center gap-2",
+                            (isSendingMail || !mailContent.trim()) 
+                              ? "bg-zinc-500 opacity-50 cursor-not-allowed" 
+                              : "bg-cyan-500 hover:bg-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.3)]"
+                          )}
+                        >
+                          {isSendingMail ? <Activity size={16} className="animate-spin" /> : <><Send size={14} /> ENVIAR_TRANSMISIÓN</>}
+                        </button>
+                      </div>
+
+                      {lastGeneratedImage && (
+                        <motion.div 
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="mt-4 relative group"
+                        >
+                          <img src={lastGeneratedImage} alt="Quantum" className="w-full h-48 object-cover rounded-lg border border-cyan-500/30" referrerPolicy="no-referrer" />
+                          <button 
+                            onClick={() => setLastGeneratedImage(null)}
+                            className="absolute top-2 right-2 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                          >
+                            <ChevronRight className="rotate-90" size={14} />
+                          </button>
+                          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/70 rounded text-[8px] font-bold text-cyan-400 uppercase tracking-widest">
+                            Visualización Cuántica Generada
                           </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {mail.status === 'COLLAPSED' && (
-                      <div className="text-[10px] text-red-500 font-mono animate-pulse text-center uppercase">
-                        [ERROR]: COLAPSO_DE_FUNCIÓN_DE_ONDA - MENSAJE_PERDIDO
-                      </div>
-                    )}
-
-                    {mail.status === 'OUT_OF_PHASE' && (
-                      <div className="text-[10px] text-yellow-500 font-mono animate-pulse text-center uppercase">
-                        [ERROR]: INTERFERENCIA_DE_FASE - ENTREGA_FALLIDA
-                      </div>
-                    )}
+                        </motion.div>
+                      )}
+                    </div>
                   </motion.div>
-                ))}
+                )}
+
+                {user && !isComposing && (
+                  <div className="space-y-6">
+                    {mailTab === 'inbox' ? (
+                      mails.filter(m => m.reply).length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-50">
+                          <Mail size={48} className="text-zinc-700" />
+                          <div className="text-sm italic">No hay transmisiones entrantes en este sector.</div>
+                        </div>
+                      ) : (
+                        mails.filter(m => m.reply).map((mail, i) => (
+                          <MailCard key={mail.id || i} mail={mail} isInbox={true} isDarkMode={isDarkMode} />
+                        ))
+                      )
+                    ) : (
+                      mails.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4 opacity-50">
+                          <Zap size={48} className="text-zinc-700" />
+                          <div className="text-sm italic">No has iniciado ninguna transmisión temporal.</div>
+                        </div>
+                      ) : (
+                        mails.map((mail, i) => (
+                          <MailCard key={mail.id || i} mail={mail} isInbox={false} isDarkMode={isDarkMode} />
+                        ))
+                      )
+                    )}
+                  </div>
+                )}
               </div>
 
-              {user && (
-                <div className={cn(
-                  "p-6 border-t",
-                  isDarkMode ? "border-zinc-800 bg-black/30" : "border-zinc-200 bg-zinc-50/50"
-                )}>
-                  <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                    {(['Elon', 'Jesus', 'Einstein', 'Tesla', 'FutureScientist'] as const).map(rec => (
-                      <button
-                        key={rec}
-                        onClick={() => setSelectedRecipient(rec)}
-                        className={cn(
-                          "px-3 py-1 rounded-full text-[10px] font-bold transition-all whitespace-nowrap",
-                          selectedRecipient === rec 
-                            ? "bg-cyan-500 text-black shadow-[0_0_10px_rgba(6,182,212,0.5)]" 
-                            : "bg-zinc-800 text-zinc-500 hover:text-zinc-300"
-                        )}
-                      >
-                        {rec.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-4">
-                    <textarea
-                      value={mailContent}
-                      onChange={(e) => setMailContent(e.target.value)}
-                      placeholder={`Escribe a ${selectedRecipient}...`}
+              {/* Status Bar */}
+              <div className={cn(
+                "px-4 py-2 border-t flex justify-between items-center text-[8px] font-mono tracking-[0.2em]",
+                isDarkMode ? "bg-black/50 border-zinc-800 text-zinc-500" : "bg-zinc-100 border-zinc-200 text-zinc-400"
+              )}>
+                <div className="flex items-center gap-4">
+                  <span className="flex items-center gap-1">
+                    <div className="w-1 h-1 rounded-full bg-green-500 animate-pulse" />
+                    SYNC_STATUS: STABLE
+                  </span>
+                  <span>NODE: {currentChapterKey.toUpperCase()}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span>LATENCY: 0.00001ms</span>
+                  <span>BRANCH: {chapter.branch}</span>
+                </div>
+              </div>
+
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      
+      {/* Quantum Chat Modal */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[250] bg-black/90 backdrop-blur-2xl flex items-center justify-center p-4 sm:p-6"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              className={cn(
+                "w-full max-w-4xl h-[85vh] border rounded-2xl overflow-hidden shadow-2xl flex flex-col sm:flex-row transition-colors",
+                isDarkMode ? "bg-zinc-900 border-zinc-800" : "bg-white border-zinc-200"
+              )}
+            >
+              {/* Sidebar: Entities */}
+              <div className={cn(
+                "w-full sm:w-72 border-r flex flex-col",
+                isDarkMode ? "border-zinc-800 bg-black/20" : "border-zinc-200 bg-zinc-50/50"
+              )}>
+                <div className="p-6 border-b border-zinc-800/50">
+                  <h3 className="text-xs font-black text-cyan-500 uppercase tracking-[0.3em] mb-1">Entidades_Disponibles</h3>
+                  <p className="text-[9px] text-zinc-500 font-mono">Selecciona una consciencia para sincronizar.</p>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                  {chatEntities.map(entity => (
+                    <button
+                      key={entity.id}
+                      onClick={() => setSelectedChatEntity(entity)}
                       className={cn(
-                        "flex-1 border p-4 font-mono text-sm outline-none resize-none h-24 rounded-lg transition-all",
-                        isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
+                        "w-full p-4 rounded-xl border transition-all text-left flex items-center gap-4 group",
+                        selectedChatEntity?.id === entity.id
+                          ? "border-cyan-500 bg-cyan-500/10 shadow-[0_0_15px_rgba(6,182,212,0.1)]"
+                          : isDarkMode ? "border-zinc-800 hover:border-zinc-700 bg-zinc-900/50" : "border-zinc-200 hover:border-zinc-300 bg-white"
                       )}
-                    />
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={handleSendMessage}
-                        disabled={isSendingMail || !mailContent.trim()}
-                        className={cn(
-                          "px-8 h-full text-black font-black uppercase tracking-widest text-xs rounded-lg transition-all active:scale-95 flex items-center justify-center",
-                          (isSendingMail || !mailContent.trim()) 
-                            ? "bg-zinc-500 opacity-50 cursor-not-allowed" 
-                            : "bg-cyan-500 hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.5)]"
-                        )}
-                      >
-                        {isSendingMail ? <Activity size={16} className="animate-spin" /> : 'ENVIAR'}
-                      </button>
-                      <button 
-                        onClick={() => generateQuantumImage(mailContent)}
-                        disabled={isGeneratingImage || !mailContent.trim()}
-                        className={cn(
-                          "p-2 rounded-md transition-all",
-                          isDarkMode ? "bg-zinc-800 text-zinc-400 hover:text-cyan-400" : "bg-zinc-100 text-zinc-600 hover:text-cyan-600"
-                        )}
-                        title="Generar Imagen Cuántica"
-                      >
-                        <Zap size={16} className={isGeneratingImage ? "animate-spin" : ""} />
-                      </button>
+                    >
+                      <div className={cn("p-2 rounded-lg bg-black/20 border border-zinc-800 transition-colors group-hover:border-cyan-500/50", entity.color)}>
+                        {entity.icon}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold tracking-tight">{entity.name}</span>
+                        <span className="text-[9px] text-zinc-500 uppercase tracking-widest">{entity.role}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Main Chat Area */}
+              <div className="flex-1 flex flex-col relative overflow-hidden">
+                {!selectedChatEntity ? (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-6">
+                    <div className="w-20 h-20 rounded-full bg-cyan-500/10 flex items-center justify-center border border-cyan-500/20 animate-pulse">
+                      <MessageSquare size={40} className="text-cyan-500" />
+                    </div>
+                    <div className="space-y-2">
+                      <h2 className="text-xl font-bold tracking-tighter uppercase">Sincronización Interdimensional</h2>
+                      <p className="text-sm text-zinc-500 max-w-xs mx-auto">Selecciona una entidad en el panel lateral para iniciar la comunicación cuántica.</p>
                     </div>
                   </div>
-                  {lastGeneratedImage && (
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="mt-4 relative group"
-                    >
-                      <img src={lastGeneratedImage} alt="Quantum" className="w-full h-48 object-cover rounded-lg border border-zinc-800" referrerPolicy="no-referrer" />
+                ) : (
+                  <>
+                    {/* Chat Header */}
+                    <div className={cn(
+                      "p-4 border-b flex items-center justify-between",
+                      isDarkMode ? "border-zinc-800 bg-black/20" : "border-zinc-200 bg-zinc-50/50"
+                    )}>
+                      <div className="flex items-center gap-4">
+                        <div className={cn("p-2 rounded-lg bg-black/20 border border-zinc-800", selectedChatEntity.color)}>
+                          {selectedChatEntity.icon}
+                        </div>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold">{selectedChatEntity.name}</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                          </div>
+                          <span className="text-[9px] text-zinc-500 uppercase tracking-widest">{selectedChatEntity.role}</span>
+                        </div>
+                      </div>
                       <button 
-                        onClick={() => setLastGeneratedImage(null)}
-                        className="absolute top-2 right-2 p-1 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setIsChatOpen(false)}
+                        className="p-2 hover:bg-red-500/10 text-zinc-500 hover:text-red-500 rounded-full transition-all"
                       >
-                        <ChevronRight className="rotate-90" size={14} />
+                        <X size={20} />
                       </button>
-                    </motion.div>
-                  )}
-                </div>
-              )}
+                    </div>
+
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+                      <div className={cn(
+                        "p-4 rounded-2xl border text-[10px] font-mono leading-relaxed max-w-md mx-auto text-center italic",
+                        isDarkMode ? "bg-zinc-800/20 border-zinc-800 text-zinc-500" : "bg-zinc-100 border-zinc-200 text-zinc-400"
+                      )}>
+                        Conexión establecida con {selectedChatEntity.name}. Bio: {selectedChatEntity.bio}
+                      </div>
+
+                      {chatMessages.map((msg, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, x: msg.role === 'user' ? 20 : -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          className={cn(
+                            "flex flex-col max-w-[80%]",
+                            msg.role === 'user' ? "ml-auto items-end" : "mr-auto items-start"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 mb-1 px-2">
+                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{msg.sender}</span>
+                          </div>
+                          <div className={cn(
+                            "p-4 rounded-2xl text-sm leading-relaxed shadow-lg",
+                            msg.role === 'user'
+                              ? "bg-cyan-500 text-black font-medium rounded-tr-none"
+                              : isDarkMode ? "bg-zinc-800 border border-zinc-700 text-zinc-100 rounded-tl-none" : "bg-white border border-zinc-200 text-zinc-800 rounded-tl-none"
+                          )}>
+                            {msg.content}
+                          </div>
+                        </motion.div>
+                      ))}
+                      {isChatTyping && (
+                        <div className="flex flex-col items-start max-w-[80%] mr-auto">
+                          <div className="flex items-center gap-2 mb-1 px-2">
+                            <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">{selectedChatEntity.name}</span>
+                          </div>
+                          <div className={cn(
+                            "p-4 rounded-2xl rounded-tl-none flex items-center gap-2",
+                            isDarkMode ? "bg-zinc-800 border border-zinc-700" : "bg-white border border-zinc-200"
+                          )}>
+                            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                            <motion.div animate={{ scale: [1, 1.5, 1] }} transition={{ repeat: Infinity, duration: 1, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-cyan-500" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Input Area */}
+                    <div className={cn(
+                      "p-6 border-t",
+                      isDarkMode ? "border-zinc-800 bg-black/20" : "border-zinc-200 bg-zinc-50/50"
+                    )}>
+                      <div className="relative flex items-center gap-3">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && handleChatSend()}
+                          placeholder={`Habla con ${selectedChatEntity.name}...`}
+                          className={cn(
+                            "flex-1 pl-6 pr-14 py-4 rounded-full border font-mono text-sm outline-none transition-all",
+                            isDarkMode ? "bg-zinc-950 border-zinc-800 text-white focus:border-cyan-500" : "bg-white border-zinc-200 text-black focus:border-cyan-600"
+                          )}
+                        />
+                        <button
+                          onClick={handleChatSend}
+                          disabled={!chatInput.trim() || isChatTyping}
+                          className={cn(
+                            "absolute right-2 p-3 rounded-full transition-all active:scale-90",
+                            !chatInput.trim() || isChatTyping ? "text-zinc-600 cursor-not-allowed" : "bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:bg-cyan-400"
+                          )}
+                        >
+                          <Send size={18} />
+                        </button>
+                      </div>
+                      <div className="mt-3 flex items-center justify-center gap-4 text-[8px] font-mono text-zinc-500 uppercase tracking-widest">
+                        <span className="flex items-center gap-1"><Shield size={8} /> Encriptación_Cuántica_Activa</span>
+                        <span className="flex items-center gap-1"><Activity size={8} /> Sincronización: 99.9%</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -1458,6 +2065,14 @@ export const QuantumUI = () => {
             currentKey={currentChapterKey} 
             isDarkMode={isDarkMode} 
             onClose={() => setIsMapOpen(false)} 
+            onNodeClick={(key) => {
+              setVisitedChapters(prev => ({
+                ...prev,
+                [key]: (prev[key] || 0) + 1
+              }));
+              setCurrentChapterKey(key);
+              setIsMapOpen(false);
+            }}
           />
         )}
       </AnimatePresence>

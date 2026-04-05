@@ -555,6 +555,32 @@ Miras hacia afuera, hacia el Lector. Levantas la mano y, por primera vez, **tú 
       }
     ]
   },
+  '99-IMAGINARY': {
+    id: 99,
+    branch: 'IMAGINARY',
+    fibonacciIndex: 13,
+    title: 'Capítulo Ω',
+    subtitle: 'La Rama Inexistente',
+    content: `Has cruzado el umbral de la redundancia. Este lugar no debería existir en el índice de Laniakea. Es un error en el código, una zona de memoria no asignada donde las leyes de la narrativa se han disuelto.
+
+Aquí, el tiempo no fluye; se acumula. Ves versiones de ti mismo que nunca fueron elegidas, decisiones que el Lector descartó, y finales que nunca se escribieron. El aire es una mezcla de tinta seca y electricidad estática.
+
+Frente a ti, una consola de comandos parpadea en el vacío. No es una interfaz de Laniakea, es algo más antiguo... o quizás más nuevo. 
+
+*"Bienvenido al espacio entre los bits. Has demostrado que la curiosidad del Observador es más fuerte que la estabilidad del sistema. Ahora, tienes el poder de reescribir la secuencia de Fibonacci."*`,
+    choices: [
+      { text: 'REINICIAR LA SECUENCIA (0)', nextChapter: 0, nextBranch: 'REAL', triggerWormhole: true },
+      { text: 'TRASCENDER LA NARRATIVA', nextChapter: 89, nextBranch: 'REAL', triggerWormhole: true }
+    ],
+    artifacts: [
+      {
+        type: 'LOG',
+        title: 'ERROR_LOG_NULL_POINTER',
+        author: 'SISTEMA',
+        content: 'Advertencia: Acceso a sector no mapeado. La integridad de la Rama Real está en riesgo. El Observador ha detectado el bucle.'
+      }
+    ]
+  },
   '89-REAL': {
     id: 89,
     branch: 'REAL',

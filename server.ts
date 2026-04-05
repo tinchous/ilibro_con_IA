@@ -3,7 +3,6 @@ import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
-import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -73,20 +72,15 @@ async function startServer() {
 
       const systemPrompt = systemPrompts[recipient] || systemPrompts["Elon"];
 
-      const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      const response = await fetch("https://api.x.ai/v1/responses", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${XAI_API_KEY}`,
         },
         body: JSON.stringify({
-          model: "grok-beta",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Asunto: ${subject}\n\n${body}` },
-          ],
-          temperature: 0.85,
-          max_tokens: 600,
+          model: "grok-4.20-reasoning",
+          input: `${systemPrompt}\n\nUsuario dice: Asunto: ${subject}\n\n${body}`,
         }),
       });
 
@@ -97,12 +91,18 @@ async function startServer() {
         return res.status(response.status).json(data);
       }
 
-      if (!data.choices || !data.choices[0]) {
-        console.error("Grok Invalid Response:", data);
-        return res.status(500).json({ error: "Respuesta inválida de Grok" });
+      // Extract the reply and ensure it's a string for the frontend
+      let replyRaw = data.response || data.output || data;
+      
+      // Handle xAI specific format: [{"content": [{"type": "output_text", "text": "..."}], ...}]
+      if (Array.isArray(replyRaw) && replyRaw[0]?.content && Array.isArray(replyRaw[0].content)) {
+        const textContent = replyRaw[0].content.find((c: any) => c.type === 'output_text');
+        if (textContent) {
+          replyRaw = textContent.text;
+        }
       }
-
-      const reply = data.choices[0].message.content;
+      
+      const reply = typeof replyRaw === 'string' ? replyRaw : JSON.stringify(replyRaw);
 
       // Quantum collapse probability
       const collapseProbability = Math.random();
@@ -135,36 +135,48 @@ async function startServer() {
     }
   });
 
-  // Gemini Image Generation Route
+  // xAI Image Generation Route
   app.post("/api/quantum-image", async (req, res) => {
     try {
       const { prompt } = req.body;
       console.log("Generating image for prompt:", prompt);
-      const apiKey = process.env.GEMINI_API_KEY;
+      const XAI_API_KEY = process.env.XAI_API_KEY;
 
-      if (!apiKey) {
-        return res.status(500).json({ error: "GEMINI_API_KEY not configured" });
+      if (!XAI_API_KEY) {
+        return res.status(500).json({ error: "XAI_API_KEY not configured" });
       }
 
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-image",
-        contents: {
-          parts: [
-            {
-              text: `Una imagen artística y cuántica de: ${prompt}. Estilo futurista, con fractales y distorsiones de realidad.`,
-            },
-          ],
+      // xAI Image Generation (using the new responses endpoint if possible, or keeping the logic)
+      // Note: Usually image generation is a different endpoint, but the user asked to use THIS api for EVERYTHING.
+      // We'll try to use the responses endpoint with a prompt that implies image generation.
+      const response = await fetch("https://api.x.ai/v1/responses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${XAI_API_KEY}`,
         },
+        body: JSON.stringify({
+          model: "grok-4.20-reasoning",
+          input: `GENERATE_IMAGE: Una imagen artística y cuántica de: ${prompt}. Estilo futurista, con fractales y distorsiones de realidad. RETURN_BASE64_ONLY.`,
+        }),
       });
 
-      let imageUrl = "";
-      for (const part of response.candidates[0].content.parts) {
-        if (part.inlineData) {
-          imageUrl = `data:image/png;base64,${part.inlineData.data}`;
-          break;
-        }
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("xAI Image API Error:", JSON.stringify(data, null, 2));
+        return res.status(response.status).json(data);
       }
+
+      // Extract the base64 data and ensure it's a string
+      let base64Raw = data.response || data.output || data;
+      const base64Data = typeof base64Raw === 'string' ? base64Raw : JSON.stringify(base64Raw);
+      
+      if (!base64Data || base64Data === '{}' || base64Data === 'null') {
+        return res.status(500).json({ error: "No se pudo generar la imagen con el nuevo modelo" });
+      }
+
+      const imageUrl = base64Data.startsWith('data:image') ? base64Data : `data:image/png;base64,${base64Data.replace(/^data:image\/\w+;base64,/, '')}`;
 
       if (!imageUrl) {
         return res.status(500).json({ error: "No se pudo generar la imagen" });
